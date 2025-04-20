@@ -1,0 +1,207 @@
+{% extends "base.html" %} {% load static %} {% block title %}Add Question - {{
+module.title }}{% endblock %} {% block extra_css %}
+<style>
+  .answer-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f8f9fa;
+  }
+  .correct-answer {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_detail' module_id=module.id %}"
+          >{{ module.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:manage_questions' module_id=module.id %}"
+          >Manage Questions</a
+        >
+      </li>
+      <li class="breadcrumb-item active">Add Question</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="mb-0">Add Question</h2>
+          <p class="text-muted mb-0">{{ module.title }}</p>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-4">
+              <label
+                for="{{ question_form.text.id_for_label }}"
+                class="form-label"
+                >Question Text</label
+              >
+              {{ question_form.text }} {% if question_form.text.errors %}
+              <div class="invalid-feedback d-block">
+                {{ question_form.text.errors.0 }}
+              </div>
+              {% endif %}
+              <div class="form-text">Write a clear, concise question.</div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label
+                  for="{{ question_form.question_type.id_for_label }}"
+                  class="form-label"
+                  >Question Type</label
+                >
+                {{ question_form.question_type }} {% if
+                question_form.question_type.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ question_form.question_type.errors.0 }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                  Single choice = one correct answer, Multiple choice = one or
+                  more correct answers
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label
+                  for="{{ question_form.course_module_number.id_for_label }}"
+                  class="form-label"
+                  >Related Course Module</label
+                >
+                {{ question_form.course_module_number }} {% if
+                question_form.course_module_number.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ question_form.course_module_number.errors.0 }}
+                </div>
+                {% endif %}
+                <div class="form-text">
+                  Select which course module this question relates to (0 = first
+                  module)
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="{{ question_form.explanation.id_for_label }}"
+                class="form-label"
+                >Question Explanation</label
+              >
+              {{ question_form.explanation }} {% if
+              question_form.explanation.errors %}
+              <div class="invalid-feedback d-block">
+                {{ question_form.explanation.errors.0 }}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                This explanation will be shown to users during review. Explain
+                why the correct answer is correct.
+              </div>
+            </div>
+
+            <h4 class="mb-3">Answers</h4>
+            <p class="text-muted mb-3">
+              Add answer choices for this question. Mark at least one answer as
+              correct.
+            </p>
+
+            {{ answer_formset.management_form }}
+            <div id="answers">
+              {% for form in answer_formset %}
+              <div class="answer-card" id="answer-{{ forloop.counter0 }}">
+                <h5 class="mb-3">Answer {{ forloop.counter }}</h5>
+
+                <div class="mb-3">
+                  <label class="form-label">Answer Text</label>
+                  {{ form.text }} {% if form.text.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.text.errors.0 }}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <div class="mb-3 form-check">
+                  {{ form.is_correct }}
+                  <label
+                    class="form-check-label"
+                    for="{{ form.is_correct.id_for_label }}"
+                    >Correct Answer</label
+                  >
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Answer Explanation</label>
+                  {{ form.explanation }} {% if form.explanation.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.explanation.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Explain why this answer is correct or incorrect.
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+              <a
+                href="{% url 'awareness:manage_questions' module_id=module.id %}"
+                class="btn btn-secondary"
+                >Cancel</a
+              >
+              <button type="submit" class="btn btn-primary">
+                Save Question
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Toggle answer card styling based on correct checkbox
+    const correctCheckboxes = document.querySelectorAll(
+      "input[type=checkbox][name$=is_correct]"
+    );
+    correctCheckboxes.forEach(function (checkbox) {
+      // Initialize styling
+      updateAnswerCardStyle(checkbox);
+
+      // Update styling on change
+      checkbox.addEventListener("change", function () {
+        updateAnswerCardStyle(this);
+      });
+    });
+
+    function updateAnswerCardStyle(checkbox) {
+      const answerCard = checkbox.closest(".answer-card");
+      if (checkbox.checked) {
+        answerCard.classList.add("correct-answer");
+      } else {
+        answerCard.classList.remove("correct-answer");
+      }
+    }
+  });
+</script>
+{% endblock %} {% endblock %}

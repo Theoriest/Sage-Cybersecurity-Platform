@@ -1,0 +1,283 @@
+{% extends "base.html" %} 
+{% load static %} 
+{% block title %}Training Metrics{% endblock %}
+{% block extra_css %}
+<style>
+  .stats-card {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    transition: transform 0.3s;
+  }
+
+  .stats-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .chart-container {
+    height: 300px;
+    margin-bottom: 30px;
+  }
+  
+  .metric-number {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #0d6efd;
+    margin-bottom: 0;
+  }
+  
+  .metric-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .department-card {
+    border-left: 4px solid #0d6efd;
+  }
+  
+  .progress-sm {
+    height: 6px;
+    margin-bottom: 0;
+  }
+  
+  .nav-tabs .nav-link {
+    color: #495057;
+  }
+  .nav-tabs .nav-link.active {
+    font-weight: bold;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Custom navigation for SOC users -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'soc:dashboard' %}">SOC Dashboard</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'courses:course_list' %}">Courses</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="{% url 'courses:enrollment_stats' %}">Training Metrics</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+    </li>
+  </ul>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Training Metrics & Enrollment Statistics</h1>
+    <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary">
+      <i class="fas fa-book"></i> Course Management
+    </a>
+  </div>
+
+  <!-- Overview statistics cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card stats-card bg-primary text-white">
+        <div class="card-body">
+          <h5 class="card-title">Unique Learners</h5>
+          <h2 class="card-text">{{ unique_users|default:"0" }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card stats-card bg-success text-white">
+        <div class="card-body">
+          <h5 class="card-title">Courses Completed</h5>
+          <h2 class="card-text">{{ courses_completed|default:"0" }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card stats-card bg-info text-white">
+        <div class="card-body">
+          <h5 class="card-title">Active Courses</h5>
+          <h2 class="card-text">{{ active_courses|default:"0" }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card stats-card bg-warning text-dark">
+        <div class="card-body">
+          <h5 class="card-title">Avg. Completion Rate</h5>
+          <h2 class="card-text">{{ completion_rate|default:"0" }}%</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts and detailed statistics -->
+  <div class="row">
+    <!-- Enrollment trends chart -->
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5>Enrollment Trends (Last 6 Months)</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="enrollmentTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Top departments -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5>Top Performing Departments</h5>
+        </div>
+        <div class="card-body">
+          {% if department_stats %}
+            <div class="list-group list-group-flush">
+              {% for dept in department_stats|slice:":5" %}
+              <div class="list-group-item px-0">
+                <div class="d-flex justify-content-between mb-1">
+                  <strong>{{ dept.name }}</strong>
+                  <span>{{ dept.completion_rate }}%</span>
+                </div>
+                <div class="progress progress-sm">
+                  <div class="progress-bar" role="progressbar" style="width: {{ dept.completion_rate }}%" 
+                    aria-valuenow="{{ dept.completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small class="text-muted">{{ dept.completions }} of {{ dept.enrollments }} courses completed</small>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-center text-muted my-3">No department data available</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Per-course statistics table -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <h5>Course Performance Metrics</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Course</th>
+              <th>Enrollments</th>
+              <th>Unique Users</th>
+              <th>Completions</th>
+              <th>Completion Rate</th>
+              <th>Avg. Completion Time</th>
+              <th>Recent Activity</th>
+              <th>Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if course_stats %}
+              {% for course in course_stats %}
+              <tr>
+                <td>{{ course.title }}</td>
+                <td>{{ course.enrollment_count }}</td>
+                <td>{{ course.unique_users }}</td>
+                <td>{{ course.completion_count }}</td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="progress me-2" style="width: 60px; height: 6px;">
+                      <div class="progress-bar" role="progressbar" style="width: {{ course.completion_rate }}%" 
+                        aria-valuenow="{{ course.completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <span>{{ course.completion_rate }}%</span>
+                  </div>
+                </td>
+                <td>{{ course.avg_completion_time }}</td>
+                <td>{{ course.recent_activity }}</td>
+                <td>
+                  {% if course.avg_rating %}
+                    {{ course.avg_rating|floatformat:1 }} / 5
+                    <div class="text-warning">
+                      {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= course.avg_rating|floatformat:"0"|add:"0" %}
+                          <i class="fas fa-star"></i>
+                        {% elif forloop.counter <= course.avg_rating|floatformat:"0"|add:"0.5" %}
+                          <i class="fas fa-star-half-alt"></i>
+                        {% else %}
+                          <i class="far fa-star"></i>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="8" class="text-center">No course data available</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Enrollment trends chart
+    const enrollmentCtx = document.getElementById('enrollmentTrendChart').getContext('2d');
+    const enrollmentChart = new Chart(enrollmentCtx, {
+      type: 'line',
+      data: {
+        labels: {{ month_labels|safe }},
+        datasets: [{
+          label: 'New Enrollments',
+          data: {{ enrollment_counts|safe }},
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13, 110, 253, 0.2)',
+          tension: 0.2,
+          fill: true,
+          borderWidth: 2,
+          pointBackgroundColor: '#0d6efd',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}
+{% endblock %}

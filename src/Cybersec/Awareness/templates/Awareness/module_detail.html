@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% load static %}
+{% load awareness_filters %}
+
+{% block title %}{{ module.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .module-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+  }
+  
+  .card-action {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .card-action:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .difficulty-badge.basic {
+    background-color: #28a745;
+  }
+  .difficulty-badge.intermediate {
+    background-color: #fd7e14;
+  }
+  .difficulty-badge.advanced {
+    background-color: #dc3545;
+  }
+  
+  .stat-card {
+    text-align: center;
+    border: none;
+    background-color: rgba(248, 249, 250, 0.7);
+    margin-bottom: 15px;
+    border-radius: 8px;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #0d6efd;
+  }
+  
+  .stat-label {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #6c757d;
+    letter-spacing: 0.5px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item active">{{ module.title }}</li>
+    </ol>
+  </nav>
+  
+  <div class="module-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1>{{ module.title }}</h1>
+        <p class="lead text-muted">{{ module.description }}</p>
+        <div class="mt-3">
+          <span class="badge difficulty-badge {{ module.difficulty }} p-2">
+            {{ module.get_difficulty_display }} Difficulty
+          </span>
+          <span class="badge bg-info p-2 ms-2">
+            {{ module.get_point_value }} Points
+          </span>
+          <span class="badge bg-secondary p-2 ms-2">
+            {{ module.questions.count }} Questions
+          </span>
+        </div>
+      </div>
+      <div class="col-md-4 text-center text-md-end">
+        <a href="{% url 'awareness:take_module' module_id=module.id %}" class="btn btn-primary btn-lg">
+          <i class="fas fa-play-circle me-2"></i> Take Module
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="stat-card p-3">
+        <div class="stat-number">{{ module.questions.count }}</div>
+        <div class="stat-label">Total Questions</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card p-3">
+        <div class="stat-number">{{ module.get_point_value }}</div>
+        <div class="stat-label">Points Available</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card p-3">
+        <div class="stat-number">
+          {% if user_attempts %}{{ user_attempts }}{% else %}0{% endif %}
+        </div>
+        <div class="stat-label">Your Attempts</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4>About This Module</h4>
+        </div>
+        <div class="card-body">
+          <h5>Associated Course: {{ module.course.title }}</h5>
+          
+          <p class="mt-3">{{ module.description }}</p>
+          
+          <h5 class="mt-4">What You'll Learn:</h5>
+          <ul>
+            {% for course_module in module.course.modules.all %}
+              <li><strong>{{ course_module.title }}</strong> - {{ course_module.description|truncatechars:100 }}</li>
+            {% empty %}
+              <li>No detailed content available for this module.</li>
+            {% endfor %}
+          </ul>
+          
+          <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle me-2"></i> Complete this awareness module to demonstrate your understanding of the material covered in the course.
+          </div>
+        </div>
+      </div>
+      
+      {% if user_completed %}
+      <div class="card border-success mb-4">
+        <div class="card-header bg-success text-white">
+          <h4><i class="fas fa-check-circle me-2"></i> You've Completed This Module</h4>
+        </div>
+        <div class="card-body">
+          <p>Great job! You've successfully passed this awareness module.</p>
+          
+          <a href="{% url 'awareness:review_attempt' attempt_id=latest_attempt.id %}" class="btn btn-outline-success">
+            <i class="fas fa-search me-1"></i> Review Your Last Attempt
+          </a>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if user.is_staff or module.created_by == user %}
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h4>Manage This Module</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="card card-action h-100">
+                <div class="card-body text-center">
+                  <i class="fas fa-question-circle fa-3x mb-3 text-primary"></i>
+                  <h5>Questions</h5>
+                  <p class="mb-4">Manage the questions for this module</p>
+                  <a href="{% url 'awareness:manage_questions' module_id=module.id %}" class="btn btn-outline-primary">
+                    Manage Questions
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="card card-action h-100">
+                <div class="card-body text-center">
+                  <i class="fas fa-chart-bar fa-3x mb-3 text-primary"></i>
+                  <h5>Analytics</h5>
+                  <p class="mb-4">View user participation and performance</p>
+                  <a href="{% url 'awareness:module_analytics' module_id=module.id %}" class="btn btn-outline-primary">
+                    View Analytics
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+      {% if attempt_history %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4>Your History</h4>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for attempt in attempt_history %}
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">
+                {% if attempt.passed %}
+                <span class="badge bg-success">Passed</span>
+                {% else %}
+                <span class="badge bg-danger">Failed</span>
+                {% endif %}
+              </h5>
+              <small>{{ attempt.attempt_date|date:"M d, Y" }}</small>
+            </div>
+            <p class="mb-1">Score: {{ attempt.score }}%</p>
+            <small>Time: 
+              {% if attempt.time_taken %}
+                {% widthratio attempt.time_taken 60 1 %} min
+              {% else %}
+                N/A
+              {% endif %}
+            </small>
+            <div class="mt-2">
+              <a href="{% url 'awareness:review_attempt' attempt_id=attempt.id %}" class="btn btn-sm btn-outline-secondary">
+                Review
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4>Module Information</h4>
+        </div>
+        <div class="card-body">
+          <p><strong>Created by:</strong> {{ module.created_by.get_full_name|default:module.created_by.username }}</p>
+          <p><strong>Created:</strong> {{ module.created_at|date:"F j, Y" }}</p>
+          <p><strong>Last updated:</strong> {{ module.updated_at|date:"F j, Y" }}</p>
+          
+          <hr>
+          
+          <div class="d-grid gap-2">
+            <a href="{% url 'courses:course_detail' course_id=module.course.id %}" class="btn btn-outline-secondary">
+              <i class="fas fa-book me-1"></i> View Related Course
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

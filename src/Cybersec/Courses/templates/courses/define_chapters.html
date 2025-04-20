@@ -1,0 +1,279 @@
+{% extends "base.html" %} {% load static %} {% load nonsoc_extras %}
+{% block title %}Define Chapters |{{ module.title }}{% endblock %} {% block extra_css %}
+<style>
+  .module-info {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .module-nav {
+    display: flex;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+  }
+  .module-nav-item {
+    flex: 0 0 auto;
+    margin-right: 10px;
+  }
+  .module-nav-item.active {
+    font-weight: bold;
+  }
+  .chapter-list {
+    margin-bottom: 20px;
+  }
+  .chapter-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+  }
+  .chapter-actions {
+    margin-left: auto;
+  }
+  .no-chapters {
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+  }
+  .chapter-form {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:manage_courses' %}">Courses</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:course_detail' course_id=course.id %}"
+          >{{ course.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Define Chapters for {{ module.title }}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="module-info">
+    <h1>{{ module.title }}</h1>
+    <p class="lead">{{ module.description }}</p>
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="badge bg-primary"
+        >Module {{ module.order|add:1 }} of {{ all_modules.count }}</span
+      >
+      <span>Course: <strong>{{ course.title }}</strong></span>
+    </div>
+  </div>
+
+  <div class="module-nav">
+    {% for mod in all_modules %}
+    <div class="module-nav-item {% if mod.id == module.id %}active{% endif %}">
+      {% if mod.id == module.id %}
+      <span class="btn btn-primary"
+        >Module {{ mod.order|add:1 }}: {{ mod.title }}</span
+      >
+      {% else %}
+      <a
+        href="{% url 'courses:define_chapters' module_id=mod.id %}"
+        class="btn btn-outline-primary"
+      >
+        Module {{ mod.order|add:1 }}: {{ mod.title }}
+      </a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h3 class="mb-0">Chapters</h3>
+          <form method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" name="generate" class="btn btn-primary">
+              <i class="fas fa-magic"></i> Generate Chapters with AI
+            </button>
+          </form>
+        </div>
+        <div class="card-body">
+          {% if chapters %}
+          <div class="chapter-list">
+            {% for chapter in chapters %}
+            <div class="chapter-item">
+              <div>
+                <h5 class="mb-0">{{ chapter.title }}</h5>
+                {% if chapter.is_summary %}
+                <span class="badge bg-info">Summary Chapter</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="no-chapters">
+            <p>No chapters defined for this module yet.</p>
+            <p>
+              Click "Generate Chapters with AI" to get started or create
+              chapters manually below.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Create Chapters Manually</h3>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <div id="chaptersContainer">
+              <!-- Chapter 1 (Always required) -->
+              <div class="chapter-form mb-3">
+                <div class="mb-3">
+                  <label class="form-label">Chapter 1 Title</label>
+                  <input
+                    type="text"
+                    name="chapter_title"
+                    class="form-control"
+                    required
+                  />
+                </div>
+                <div class="form-check">
+                  <input
+                    type="checkbox"
+                    name="chapter_is_summary"
+                    class="form-check-input"
+                    id="isSummary1"
+                  />
+                  <label class="form-check-label" for="isSummary1"
+                    >This is a summary chapter</label
+                  >
+                </div>
+              </div>
+
+              <!-- Additional chapters will be added here -->
+            </div>
+
+            <div class="mb-3">
+              <button
+                type="button"
+                id="addChapterBtn"
+                class="btn btn-outline-secondary"
+              >
+                <i class="fas fa-plus"></i> Add Another Chapter
+              </button>
+              <small class="text-muted ms-2"
+                >Maximum 5 chapters per module</small
+              >
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <button
+                type="submit"
+                name="save_chapters"
+                class="btn btn-success"
+              >
+                <i class="fas fa-save"></i> Save Chapters
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="mb-0">Requirements</h3>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">Each module must have 1-5 chapters</li>
+            <li class="list-group-item">
+              The last chapter should be a summary of the module
+            </li>
+            <li class="list-group-item">
+              Each regular chapter will have quiz questions
+            </li>
+            <li class="list-group-item">Summary chapters don't have quizzes</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Next Steps</h3>
+        </div>
+        <div class="card-body">
+          <p>After defining chapters for this module:</p>
+          <ol>
+            <li>Define chapters for any remaining modules</li>
+            <li>Generate content for each chapter</li>
+            <li>Create quiz questions for non-summary chapters</li>
+          </ol>
+
+          <form method="post" class="mt-4">
+            {% csrf_token %}
+            <button
+              type="submit"
+              name="next_module"
+              class="btn btn-primary w-100"
+            >
+              Continue to Next Module
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const chaptersContainer = document.getElementById("chaptersContainer");
+    const addChapterBtn = document.getElementById("addChapterBtn");
+    let chapterCount = 1;
+
+    addChapterBtn.addEventListener("click", function () {
+      chapterCount++;
+      if (chapterCount <= 5) {
+        const newChapter = document.createElement("div");
+        newChapter.className = "chapter-form mb-3";
+        newChapter.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Chapter ${chapterCount} Title</label>
+                    <input type="text" name="chapter_title" class="form-control" required>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="chapter_is_summary" class="form-check-input" id="isSummary${chapterCount}">
+                    <label class="form-check-label" for="isSummary${chapterCount}">This is a summary chapter</label>
+                </div>
+            `;
+        chaptersContainer.appendChild(newChapter);
+
+        if (chapterCount === 5) {
+          addChapterBtn.disabled = true;
+        }
+      }
+    });
+  });
+</script>
+{% endblock %} {% endblock %}

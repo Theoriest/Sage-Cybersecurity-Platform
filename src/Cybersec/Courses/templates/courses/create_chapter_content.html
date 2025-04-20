@@ -1,0 +1,422 @@
+{% extends "base.html" %} {% load static %} 
+{% block title %}Create Chapter Content | {{ chapter.title }}{% endblock %} {% block extra_css %}
+<style>
+  .chapter-nav {
+    display: flex;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+  }
+  .chapter-nav-item {
+    flex: 0 0 auto;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+  .chapter-nav-item.active {
+    font-weight: bold;
+  }
+  .content-preview {
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    min-height: 200px;
+    margin-bottom: 20px;
+    background-color: #f8f9fa;
+  }
+  .question-box {
+    background-color: #f0f8ff;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+  .choice-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .choice-text {
+    flex-grow: 1;
+    margin-right: 10px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:manage_courses' %}">Courses</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:course_detail' course_id=course.id %}"
+          >{{ course.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:define_chapters' module_id=module.id %}"
+          >{{ module.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ chapter.title }}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="chapter-nav">
+    {% for chap in all_chapters %}
+    <div
+      class="chapter-nav-item {% if chap.id == chapter.id %}active{% endif %}"
+    >
+      {% if chap.id == chapter.id %}
+      <span class="btn btn-primary">{{ chap.title }}</span>
+      {% else %}
+      <a
+        href="{% url 'courses:create_chapter_content' chapter_id=chap.id %}"
+        class="btn btn-outline-primary"
+      >
+        {{ chap.title }}
+      </a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h3 class="mb-0">Chapter Content</h3>
+          <form method="post" style="display: inline">
+            {% csrf_token %}
+            <button type="submit" name="generate" class="btn btn-primary">
+              <i class="fas fa-magic"></i> Generate Content with AI
+            </button>
+          </form>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">Chapter Title</label>
+              <input
+                type="text"
+                class="form-control"
+                value="{{ chapter.title }}"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Content</label>
+              <textarea
+                name="content"
+                id="editor"
+                rows="15"
+                class="form-control"
+              >
+{{ chapter.content|default:'' }}</textarea
+              >
+            </div>
+
+            {% if not chapter.is_summary %}
+            <h4 class="mt-4">Quiz Questions</h4>
+            <p class="text-muted">
+              Create up to 3 multiple-choice questions for this chapter.
+            </p>
+
+            <div id="questionsContainer">
+              {% for question in questions %}
+              <div class="question-box">
+                <div class="mb-3">
+                  <label class="form-label"
+                    >Question {{ forloop.counter }}</label
+                  >
+                  <input
+                    type="text"
+                    name="question_text"
+                    class="form-control"
+                    value="{{ question.question_text }}"
+                  />
+                </div>
+
+                <div class="choices-container">
+                  {% for choice in question.choices.all %}
+                  <div class="choice-row">
+                    <div class="choice-text">
+                      <input
+                        type="text"
+                        name="choice_text_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                        class="form-control"
+                        value="{{ choice.choice_text }}"
+                      />
+                    </div>
+                    <div class="form-check">
+                      <input
+                        type="checkbox"
+                        name="is_correct_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                        class="form-check-input"
+                        {%
+                        if
+                        choice.is_correct
+                        %}checked{%
+                        endif
+                        %}
+                      />
+                      <label class="form-check-label">Correct Answer</label>
+                    </div>
+                  </div>
+                  {% empty %}
+                  <!-- Add 4 empty choices if none exist -->
+                  {% for i in "1234" %}
+                  <div class="choice-row">
+                    <div class="choice-text">
+                      <input
+                        type="text"
+                        name="choice_text_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                        class="form-control"
+                        placeholder="Answer choice {{ forloop.counter }}"
+                      />
+                    </div>
+                    <div class="form-check">
+                      <input
+                        type="checkbox"
+                        name="is_correct_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                        class="form-check-input"
+                      />
+                      <label class="form-check-label">Correct Answer</label>
+                    </div>
+                  </div>
+                  {% endfor %} {% endfor %}
+                </div>
+              </div>
+              {% empty %}
+              <!-- Create first question if none exist -->
+              <div class="question-box">
+                <div class="mb-3">
+                  <label class="form-label">Question 1</label>
+                  <input
+                    type="text"
+                    name="question_text"
+                    class="form-control"
+                    placeholder="Enter your question here"
+                  />
+                </div>
+
+                <div class="choices-container">
+                  {% for i in "1234" %}
+                  <div class="choice-row">
+                    <div class="choice-text">
+                      <input
+                        type="text"
+                        name="choice_text_0_{{ forloop.counter0 }}"
+                        class="form-control"
+                        placeholder="Answer choice {{ forloop.counter }}"
+                      />
+                    </div>
+                    <div class="form-check">
+                      <input
+                        type="checkbox"
+                        name="is_correct_0_{{ forloop.counter0 }}"
+                        class="form-check-input"
+                      />
+                      <label class="form-check-label">Correct Answer</label>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            {% if questions|length < 3 %}
+            <button
+              type="button"
+              id="addQuestionBtn"
+              class="btn btn-outline-secondary mt-3"
+            >
+              <i class="fas fa-plus"></i> Add Question
+            </button>
+            {% endif %} {% endif %}
+
+            <div class="d-flex justify-content-between mt-4">
+              <button type="submit" name="save_content" class="btn btn-success">
+                <i class="fas fa-save"></i> Save Content
+              </button>
+
+              {% if previous_chapter %}
+              <a
+                href="{% url 'courses:create_chapter_content' chapter_id=previous_chapter.id %}"
+                class="btn btn-outline-secondary"
+              >
+                <i class="fas fa-arrow-left"></i> Previous Chapter
+              </a>
+              {% endif %} {% if next_chapter %}
+              <button type="submit" name="next_chapter" class="btn btn-primary">
+                Next Chapter <i class="fas fa-arrow-right"></i>
+              </button>
+              {% else %}
+              <button type="submit" name="next_chapter" class="btn btn-success">
+                Complete Course <i class="fas fa-check"></i>
+              </button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="mb-0">Guidelines</h3>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              Content should be educational and clear
+            </li>
+            <li class="list-group-item">
+              Use HTML formatting for better presentation
+            </li>
+            <li class="list-group-item">
+              Include practical examples where possible
+            </li>
+            {% if not chapter.is_summary %}
+            <li class="list-group-item">
+              Create up to 3 multiple-choice questions
+            </li>
+            <li class="list-group-item">
+              Ensure questions test key concepts from the chapter
+            </li>
+            <li class="list-group-item">
+              Mark exactly one correct answer for each question
+            </li>
+            {% else %}
+            <li class="list-group-item">
+              Summary chapters should recap key points
+            </li>
+            <li class="list-group-item">
+              No quiz questions for summary chapters
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Chapter Info</h3>
+        </div>
+        <div class="card-body">
+          <p><strong>Module:</strong> {{ module.title }}</p>
+          <p><strong>Chapter:</strong> {{ chapter.title }}</p>
+          <p>
+            <strong>Type:</strong> {% if chapter.is_summary %}Summary Chapter{%
+            else %}Content Chapter{% endif %}
+          </p>
+          <p><strong>Course:</strong> {{ course.title }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script
+  src="https://cdn.tiny.cloud/1/nou3v5d656m7pxgv0h2cl4ac8c11bpb04273t4w4rwqfiadv/tinymce/6/tinymce.min.js"
+  referrerpolicy="origin"
+></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize TinyMCE
+    tinymce.init({
+      selector: "#editor",
+      height: 400,
+      plugins:
+        "anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount",
+      toolbar:
+        "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat",
+    });
+
+    // Handle adding new questions (max 3)
+    const questionsContainer = document.getElementById("questionsContainer");
+    const addQuestionBtn = document.getElementById("addQuestionBtn");
+
+    if (addQuestionBtn) {
+      addQuestionBtn.addEventListener("click", function () {
+        const questionBoxes =
+          questionsContainer.querySelectorAll(".question-box");
+        if (questionBoxes.length < 3) {
+          const newQuestionIndex = questionBoxes.length;
+          const newQuestion = document.createElement("div");
+          newQuestion.className = "question-box";
+          newQuestion.innerHTML = `
+                    <div class="mb-3">
+                        <label class="form-label">Question ${
+                          newQuestionIndex + 1
+                        }</label>
+                        <input type="text" name="question_text" class="form-control" placeholder="Enter your question here">
+                    </div>
+                    
+                    <div class="choices-container">
+                        <div class="choice-row">
+                            <div class="choice-text">
+                                <input type="text" name="choice_text_${newQuestionIndex}_0" 
+                                      class="form-control" placeholder="Answer choice 1">
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="is_correct_${newQuestionIndex}_0" 
+                                      class="form-check-input">
+                                <label class="form-check-label">Correct Answer</label>
+                            </div>
+                        </div>
+                        <div class="choice-row">
+                            <div class="choice-text">
+                                <input type="text" name="choice_text_${newQuestionIndex}_1" 
+                                      class="form-control" placeholder="Answer choice 2">
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="is_correct_${newQuestionIndex}_1" 
+                                      class="form-check-input">
+                                <label class="form-check-label">Correct Answer</label>
+                            </div>
+                        </div>
+                        <div class="choice-row">
+                            <div class="choice-text">
+                                <input type="text" name="choice_text_${newQuestionIndex}_2" 
+                                      class="form-control" placeholder="Answer choice 3">
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="is_correct_${newQuestionIndex}_2" 
+                                      class="form-check-input">
+                                <label class="form-check-label">Correct Answer</label>
+                            </div>
+                        </div>
+                        <div class="choice-row">
+                            <div class="choice-text">
+                                <input type="text" name="choice_text_${newQuestionIndex}_3" 
+                                      class="form-control" placeholder="Answer choice 4">
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="is_correct_${newQuestionIndex}_3" 
+                                      class="form-check-input">
+                                <label class="form-check-label">Correct Answer</label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+          questionsContainer.appendChild(newQuestion);
+
+          // Disable the button if we've reached 3 questions
+          if (
+            questionsContainer.querySelectorAll(".question-box").length >= 3
+          ) {
+            addQuestionBtn.disabled = true;
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %} {% endblock %}

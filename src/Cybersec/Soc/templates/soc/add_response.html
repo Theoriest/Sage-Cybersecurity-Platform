@@ -1,0 +1,28 @@
+{% extends "base.html" %} {% block title %}Add Response to Incident{% endblock
+%} {% block content %}
+<div class="container">
+  <h1>Add Response to Incident: {{ incident.title }}</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      {{ form.content.label_tag }} {{ form.content }} {% if form.content.errors
+      %}
+      <div class="text-danger">{{ form.content.errors }}</div>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      {{ form.action_taken.label_tag }} {{ form.action_taken }} {% if
+      form.action_taken.errors %}
+      <div class="text-danger">{{ form.action_taken.errors }}</div>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Response</button>
+    <a
+      href="{% url 'soc:incident_detail' pk=incident.id %}"
+      class="btn btn-secondary"
+      >Cancel</a
+    >
+  </form>
+</div>
+{% endblock %}

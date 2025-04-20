@@ -1,0 +1,241 @@
+{% extends "base.html" %} {% load static %} 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+/>
+<style>
+  .nav-tabs .nav-link {
+    color: #495057;
+  }
+  .nav-tabs .nav-link.active {
+    font-weight: bold;
+  }
+  .dashboard-container {
+    padding: 20px 0;
+  }
+</style>
+{% endblock %} 
+
+{% block content %}
+<div class="container">
+  <ul class="nav nav-tabs mb-4">
+    {% if request.user.is_authenticated %}
+      {% if request.user.user_type == 'soc' %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'soc:dashboard' %}">SOC Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'courses' in request.path %}active{% endif %}" href="{% url 'courses:course_list' %}">Courses</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'enrollment_stats' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'courses:enrollment_stats' %}">Training Metrics</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'awareness:module_list' in request.path %}active{% endif %}" href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'non_soc:dashboard' %}">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'courses' in request.path %}active{% endif %}" href="{% url 'courses:course_list' %}">Courses</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'article_list' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'non_soc:article_list' %}">Security Articles</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'user_progress' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'non_soc:user_progress' %}">My Progress</a>
+        </li>
+      {% endif %}
+    {% endif %}
+  </ul>
+
+  {% block nonsoc_content %}{% endblock %}
+</div>
+{% endblock %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}CyberSec Training{% endblock %}</title>
+    <link
+      rel="shortcut icon"
+      href="{% static 'favicon.ico' %}"
+      type="image/x-icon"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">CyberSec Training</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                href="{% url 'home' %}"
+                >Home</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.resolver_match.url_name == 'courses' %}active{% endif %}"
+                href="{% url 'courses' %}"
+                >Courses</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}"
+                href="{% url 'about' %}"
+                >About</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
+                href="{% url 'contact' %}"
+                >Contact</a
+              >
+            </li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link position-relative {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}"
+                href="{% url 'non_soc:notifications' %}"
+              >
+                <i class="fas fa-bell me-1"></i>
+                {% with unread_count=request.user.notifications.filter.count %}
+                {% if unread_count > 0 %}
+                <span
+                  class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle"
+                >
+                  {{ unread_count }}
+                </span>
+                {% endif %} {% endwith %}
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="userDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <img
+                  src="{{ request.user.non_soc_profile.profile_picture.url }}"
+                  alt="Profile"
+                  class="profile-icon"
+                />
+                <span class="ms-2 d-none d-lg-inline"
+                  >{{ request.user.first_name }}</span
+                >
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                aria-labelledby="userDropdown"
+              >
+                <li>
+                  <a class="dropdown-item" href="{% url 'user_profile' %}"
+                    ><i class="fas fa-user me-2"></i>My Profile</a
+                  >
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'user_logout' %}"
+                    ><i class="fas fa-sign-out-alt me-2"></i>Logout</a
+                  >
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Alert Messages -->
+    <div class="container mt-3">
+      {% if messages %} {% for message in messages %}
+      <div
+        class="alert alert-{{ message.tags }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dark text-white">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <p class="mb-0">
+              &copy; {% now "Y" %} CyberSec Training. All rights reserved.
+            </p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <a href="#" class="text-white me-3">Privacy Policy</a>
+            <a href="#" class="text-white me-3">Terms of Service</a>
+            <a href="#" class="text-white">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery (if needed) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Page-specific JS -->
+    {% block extra_js %}{% endblock %}
+
+    <script>
+      // Auto-hide alerts after 5 seconds
+      document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(function () {
+          const alerts = document.querySelectorAll(".alert");
+          alerts.forEach(function (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+          });
+        }, 5000);
+      });
+    </script>
+  </body>
+</html>

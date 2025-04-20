@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %} 
+{% block title %}Awareness Modules{% endblock %} 
+{% block extra_css %}
+<style>
+  .module-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    height: 100%;
+  }
+  .module-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  .difficulty-badge.basic {
+    background-color: #28a745;
+  }
+  .difficulty-badge.intermediate {
+    background-color: #fd7e14;
+  }
+  .difficulty-badge.advanced {
+    background-color: #dc3545;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Security Awareness Modules</h1>
+    <a href="{% url 'awareness:create_module' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create New Module
+    </a>
+  </div>
+
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">About Awareness Modules</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Awareness modules are post-course assessments that test users'
+            knowledge and understanding of security concepts.
+          </p>
+          <p><strong>Key features:</strong></p>
+          <ul>
+            <li>Link directly to your courses</li>
+            <li>Automatically notify users when a course is completed</li>
+            <li>5 questions per module (typically one per course module)</li>
+            <li>Question rotation for retakes</li>
+            <li>Detailed analytics on user performance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for module in modules %}
+    <div class="col">
+      <div class="card module-card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <span class="difficulty-badge badge {{ module.difficulty }}">
+            {{ module.get_difficulty_display }}
+          </span>
+          <span class="text-muted small">{{ module.points }} base points</span>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">{{ module.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            For: {{ module.course.title }}
+          </h6>
+          <p class="card-text">{{ module.description|truncatechars:100 }}</p>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <a
+            href="{% url 'awareness:module_detail' module_id=module.id %}"
+            class="btn btn-sm btn-primary"
+          >
+            <i class="fas fa-info-circle"></i> Details
+          </a>
+          <div>
+            <a
+              href="{% url 'awareness:manage_questions' module_id=module.id %}"
+              class="btn btn-sm btn-outline-primary"
+            >
+              <i class="fas fa-question-circle"></i> Questions
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        <p>
+          You haven't created any awareness modules yet. Use the "Create New
+          Module" button to get started.
+        </p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

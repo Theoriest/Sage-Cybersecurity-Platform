@@ -1,0 +1,239 @@
+{% extends "base.html" %} 
+{% load static %} {% block title %}SOC
+MetricsDashboard{% endblock %} {% block extra_css %}
+<style>
+  .metrics-container {
+    padding: 20px;
+  }
+  .metric-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    padding: 15px;
+  }
+  .metric-header {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+  }
+  .metric-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #495057;
+  }
+  .metric-label {
+    color: #6c757d;
+    font-size: 14px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .progress {
+    height: 10px;
+    margin-bottom: 15px;
+  }
+  .chart-container {
+    height: 300px;
+    margin-bottom: 20px;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %} {% block content %}
+<div class="metrics-container">
+  <h1>SOC Metrics Dashboard</h1>
+  <p class="lead">
+    Key performance indicators and operational metrics for the Security
+    Operations Center.
+  </p>
+
+  <!-- Summary metrics -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>Total Incidents</h5>
+        </div>
+        <div class="metric-value">{{ total_incidents }}</div>
+        <div class="metric-label">All time</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>Open Incidents</h5>
+        </div>
+        <div class="metric-value">{{ open_incidents }}</div>
+        <div class="metric-label">Requiring attention</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>Resolution Rate</h5>
+        </div>
+        <div class="metric-value">
+          {% if total_incidents > 0 %} {{ resolution_rate|default:"0" }}% {%
+          else %} N/A {% endif %}
+        </div>
+        <div class="metric-label">Incidents resolved</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>Avg. Resolution Time</h5>
+        </div>
+        <div class="metric-value">{{ avg_resolution_time|default:"N/A" }}</div>
+        <div class="metric-label">Hours</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incidents by severity -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>Incidents by Severity</h5>
+        </div>
+        <div class="chart-container">
+          <canvas id="severityChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>Incidents Over Time</h5>
+        </div>
+        <div class="chart-container">
+          <canvas id="timeChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key security metrics -->
+  <h3>Key Security Metrics</h3>
+  <div class="row">
+    {% for metric in metrics %}
+    <div class="col-md-6">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h5>{{ metric.name }}</h5>
+          <p class="small text-muted">{{ metric.description }}</p>
+        </div>
+        <div class="progress-label">
+          <span>Current: {{ metric.current_value }} {{ metric.unit }}</span>
+          <span>Target: {{ metric.target_value }} {{ metric.unit }}</span>
+        </div>
+        {% if metric.target_value > 0 %} 
+        {% with percentage=metric.progress_percentage %}
+        <div class="progress">
+          <div
+            class="progress-bar {% if percentage < 50 %}bg-danger{% elif percentage < 80 %}bg-warning{% else %}bg-success{% endif %}"
+            role="progressbar"
+            style="width: {{ percentage }}%"
+            aria-valuenow="{{ percentage }}"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        {% endwith %} {% else %}
+        <div class="progress">
+          <div
+            class="progress-bar bg-info"
+            role="progressbar"
+            style="width: 0%"
+            aria-valuenow="0"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        {% endif %}
+        <div class="text-end mt-2">
+          <a
+            href="{% url 'soc:metric_detail' metric.pk %}"
+            class="btn btn-sm btn-outline-primary"
+            >View History</a
+          >
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        No security metrics defined yet.
+        <a href="{% url 'soc:metric_create' %}">Add a metric</a> to start
+        tracking.
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Incidents by severity chart
+      const severityCtx = document.getElementById('severityChart').getContext('2d');
+      const severityChart = new Chart(severityCtx, {
+          type: 'doughnut',
+          data: {
+              labels: [{% for item in incidents_by_severity %}'{{ item.get_severity_display|default:item.severity }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+              datasets: [{
+                  data: [{% for item in incidents_by_severity %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                  backgroundColor: [
+                      '#dc3545', // Critical
+                      '#fd7e14', // High
+                      '#ffc107', // Medium
+                      '#28a745', // Low
+                      '#6c757d'  // Info
+                  ],
+                  borderWidth: 1
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      position: 'right'
+                  }
+              }
+          }
+      });
+
+      // Incidents over time chart
+      const timeCtx = document.getElementById('timeChart').getContext('2d');
+      const timeChart = new Chart(timeCtx, {
+          type: 'line',
+          data: {
+              labels: [{% for item in incidents_by_day %}'{{ item.day|date:"M d" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+              datasets: [{
+                  label: 'Incidents',
+                  data: [{% for item in incidents_by_day %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  borderWidth: 2,
+                  tension: 0.1
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                  y: {
+                      beginAtZero: true,
+                      ticks: {
+                          precision: 0
+                      }
+                  }
+              }
+          }
+      });
+  });
+</script>
+{% endblock %}

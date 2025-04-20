@@ -1,0 +1,142 @@
+{% extends "base_nonsoc.html" %} {% load static %} {% block title %}{{
+article.title }}{% endblock %} {% block extra_css %}
+<style>
+  .article-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+  }
+
+  .article-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+  }
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    margin-right: 2rem;
+  }
+
+  .author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+
+  .article-content {
+    line-height: 1.8;
+  }
+
+  .article-tags {
+    margin-top: 2rem;
+  }
+
+  .article-tag {
+    display: inline-block;
+    background-color: #f8f9fa;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+    text-decoration: none;
+  }
+
+  .related-articles {
+    margin-top: 3rem;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4 mb-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'non_soc:dashboard' %}">Home</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'non_soc:article_list' %}">Articles</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ article.title }}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="article-container">
+    <div class="article-header">
+      <h1>{{ article.title }}</h1>
+      <div class="article-meta">
+        <div class="author-info">
+          <img
+            src="{% if article.author.non_soc_profile.profile_picture %}{{ article.author.non_soc_profile.profile_picture.url }}{% else %}https://via.placeholder.com/40{% endif %}"
+            alt="Profile Picture"
+            class="author-avatar"
+          />
+          <span
+            >{{ article.author.first_name }} {{ article.author.last_name}}</span
+          >
+        </div>
+        <div class="published-date">
+          <i class="fas fa-calendar-alt me-1"></i>
+          {{ article.created_at|date:"F j, Y" }}
+        </div>
+      </div>
+      {% if article.category %}
+      <span class="badge bg-secondary">{{ article.category }}</span>
+      {% endif %}
+    </div>
+
+    <div class="article-content">{{ article.content|safe }}</div>
+
+    {% if article.tags.all %}
+    <div class="article-tags">
+      <strong>Tags:</strong>
+      {% for tag in article.tags.all %}
+      <a
+        href="{% url 'non_soc:article_list' %}?tag={{ tag }}"
+        class="article-tag"
+        >{{ tag }}</a
+      >
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if related_articles %}
+  <div class="related-articles">
+    <h4>Related Articles</h4>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+      {% for related in related_articles %}
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ related.title }}</h5>
+            <p class="card-text">{{ related.description|truncatechars:100 }}</p>
+            <a
+              href="{% url 'non_soc:article_detail' article_id=related.id %}"
+              class="btn btn-sm btn-outline-primary"
+              >Read More</a
+            >
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

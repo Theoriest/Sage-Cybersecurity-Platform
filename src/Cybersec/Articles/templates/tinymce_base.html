@@ -1,0 +1,17 @@
+{% load static %}
+<!-- TinyMCE Integration -->
+<script
+  src="https://cdn.tiny.cloud/1/nou3v5d656m7pxgv0h2cl4ac8c11bpb04273t4w4rwqfiadv/tinymce/6/tinymce.min.js"
+  referrerpolicy="origin"
+></script>
+<script>
+  tinymce.init({
+    selector: "textarea.tinymce",
+    plugins:
+      "anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount",
+    toolbar:
+      "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat",
+    height: 400,
+    promotion: false,
+  });
+</script>

@@ -1,0 +1,12 @@
+{% extends "base.html" %} {% block title %}Create New Incident{% endblock %} {%
+block content %}
+<div class="container">
+  <h1>Create New Security Incident</h1>
+
+  <form method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Create Incident</button>
+    <a href="{% url 'soc:dashboard' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

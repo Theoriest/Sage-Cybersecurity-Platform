@@ -1,0 +1,212 @@
+{% extends "base.html" %} 
+{% load static %} 
+{% block title %}Create New Course{% endblock %} 
+
+{% block extra_css %}
+<style>
+  .course-creation-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .form-box {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  .help-text {
+    background-color: #e9f5ff;
+    border-left: 4px solid #0d6efd;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  .selected-files-list {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  .selected-files-list ul {
+    margin-bottom: 0;
+  }
+  .file-upload-container {
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  .file-upload-container:hover {
+    border-color: #0d6efd;
+    background-color: #e9ecef;
+  }
+  .file-upload-container input[type="file"] {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+  }
+  .filename {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .file-upload-label {
+    display: block;
+    margin-bottom: 0;
+  }
+  .file-upload-icon {
+    font-size: 2rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+  }
+</style>
+{% endblock %} 
+
+{% block content %}
+<div class="container mt-4">
+  <div class="course-creation-container">
+    <h1 class="mb-4">Create a New Course</h1>
+
+    <div class="help-text mb-4">
+      <h5><i class="fas fa-lightbulb"></i> How Course Creation Works</h5>
+      <p>
+        Creating a course is a collaborative process between you and our AI
+        assistant:
+      </p>
+      <ol>
+        <li>
+          Describe the course you want to create, including target audience and
+          learning objectives.
+        </li>
+        <li>Review and refine the suggested course title and modules.</li>
+        <li>
+          Define chapters for each module (max 5 per module, including a summary
+          chapter).
+        </li>
+        <li>Generate content for each chapter and create quiz questions.</li>
+      </ol>
+      <p>
+        You can upload relevant documents to provide additional context for the
+        AI assistant.
+      </p>
+    </div>
+
+    <div class="form-box">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-4">
+          <label for="{{ form.prompt.id_for_label }}" class="form-label h5 d-block mb-2">
+            Describe your course
+          </label>
+          <div class="w-100">
+            {{ form.prompt }}
+          </div>
+          <div class="form-text">
+            Be as detailed as possible about the course topic, target audience,
+            learning objectives, and any specific areas you want to cover.
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="{{ form.documents.id_for_label }}" class="form-label h5 d-block mb-2">
+            Upload Context Documents (Optional)
+          </label>
+          <div class="file-upload-container">
+            <div class="file-upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <label for="{{ form.documents.id_for_label }}" class="file-upload-label">
+              Click or drag files here to upload
+            </label>
+            <p class="text-muted small mb-0">PDF, DOCX, or TXT files (5MB max per file)</p>
+            <input
+              type="file"
+              name="documents"
+              multiple
+              class="form-control-file"
+              id="{{ form.documents.id_for_label }}"
+              onchange="updateFileList(this)"
+              accept=".pdf,.doc,.docx,.txt"
+            />
+          </div>
+          <div id="selectedFiles" class="mt-2"></div>
+          <div class="form-text">
+            Upload PDF, DOCX, or TXT files that provide additional context for
+            your course content. These could be existing training materials,
+            policies, or reference documents.
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <a
+            href="{% url 'courses:manage_courses' %}"
+            class="btn btn-outline-secondary"
+          >
+            <i class="fas fa-arrow-left"></i> Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-magic"></i> Generate Course Structure
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function updateFileList(input) {
+    const selectedFilesDiv = document.getElementById('selectedFiles');
+    
+    if (input.files.length > 0) {
+      let fileListHTML = '<div class="selected-files-list">';
+      fileListHTML += '<h6 class="text-primary mb-2"><i class="fas fa-file-upload me-2"></i>Selected Files:</h6>';
+      fileListHTML += '<ul class="list-group">';
+      
+      for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        
+        // Determine appropriate icon based on file extension
+        let iconClass = 'fa-file';
+        if (file.name.endsWith('.pdf')) {
+          iconClass = 'fa-file-pdf';
+        } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+          iconClass = 'fa-file-word';
+        } else if (file.name.endsWith('.txt')) {
+          iconClass = 'fa-file-alt';
+        }
+        
+        // Format file size
+        const size = file.size < 1024 * 1024
+          ? Math.round(file.size / 1024) + ' KB'
+          : Math.round(file.size / (1024 * 1024) * 10) / 10 + ' MB';
+        
+        fileListHTML += `<li class="list-group-item py-2">
+          <i class="fas ${iconClass} me-2 text-secondary"></i>
+          <span class="filename">${file.name}</span>
+          <span class="badge bg-light text-dark ms-2">${size}</span>
+        </li>`;
+      }
+      
+      fileListHTML += '</ul></div>';
+      selectedFilesDiv.innerHTML = fileListHTML;
+    } else {
+      selectedFilesDiv.innerHTML = '<p class="text-muted small"><i class="fas fa-info-circle"></i> No files selected</p>';
+    }
+  }
+</script>
+{% endblock %}

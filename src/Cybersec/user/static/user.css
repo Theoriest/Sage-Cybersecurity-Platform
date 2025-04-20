@@ -1,0 +1,78 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+}
+
+.form-container {
+  width: 400px;
+  border: 2px solid #ccc;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.form-container h1 {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  text-align: left;
+}
+
+.form-group input,
+.form-group select {
+  width: calc(100% - 22px);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.form-container button {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.form-container button:hover {
+  background-color: #45a049;
+}
+
+.site-name {
+  font-size: 24px;
+  font-weight: bold;
+  background: linear-gradient(to right, red, yellow, green);
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 20px;
+}
+
+.redirect-text {
+  margin-top: 20px;
+}
+
+.redirect-text a {
+  color: #4caf50;
+  text-decoration: none;
+}
+
+.redirect-text a:hover {
+  text-decoration: underline;
+}

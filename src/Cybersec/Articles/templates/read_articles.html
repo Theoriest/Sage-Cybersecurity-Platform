@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ article.title }}</title>
+  </head>
+  <body>
+    <header>
+      <img
+        src="{{ article.author.non_soc_profile.profile_picture.url }}"
+        alt="Profile Picture"
+      />
+      <div>
+        <h1>{{ article.title }}</h1>
+        <p>
+          By {{ article.author.first_name }} {{ article.author.last_name }} on
+          {{ article.created_at }}
+        </p>
+      </div>
+    </header>
+    <main>{{ article.content|safe }}</main>
+    <footer>
+      <a
+        href="{% url 'nonsoc_dashboard' if request.user.user_type == 'non_soc' else 'soc_dashboard' %}"
+        >Back to Dashboard</a
+      >
+      <a href="{% url 'write_article' %}">Write More Articles</a>
+    </footer>
+  </body>
+</html>

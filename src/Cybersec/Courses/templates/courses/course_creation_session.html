@@ -1,0 +1,151 @@
+{% extends "base.html" %} 
+{% load static %} {% block title %}Creating Course{%endblock %} 
+{% block extra_css %}
+<style>
+  .chat-container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .chat-message {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 10px;
+  }
+  .user-message {
+    background-color: #e9f5ff;
+    margin-left: 80px;
+  }
+  .ai-message {
+    background-color: #f8f9fa;
+    margin-right: 80px;
+  }
+  .message-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .user-header {
+    color: #0d6efd;
+  }
+  .ai-header {
+    color: #198754;
+  }
+  .json-preview {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    overflow-x: auto;
+  }
+  .json-key {
+    color: #0d6efd;
+  }
+  .json-string {
+    color: #198754;
+  }
+  .json-number {
+    color: #fd7e14;
+  }
+  .json-boolean {
+    color: #dc3545;
+  }
+  .action-buttons {
+    margin-top: 20px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="chat-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Course Creation</h1>
+      <div>
+        <span class="badge bg-primary">{{ session.get_status_display }}</span>
+      </div>
+    </div>
+
+    <div class="chat-history mb-4">
+      {% for message in messages %} {% if message.is_user %}
+      <div class="chat-message user-message">
+        <div class="message-header user-header">
+          <i class="fas fa-user-circle"></i> You
+        </div>
+        <div class="message-content">{{ message.content|linebreaks }}</div>
+      </div>
+      {% else %}
+      <div class="chat-message ai-message">
+        <div class="message-header ai-header">
+          <i class="fas fa-robot"></i> AI Assistant
+        </div>
+        <div class="message-content">
+          {% if is_json %}
+          <p>Here's my suggestion for your course:</p>
+
+          <div class="json-preview">
+            {% if ai_response.course_title %}
+            <h3>Course: {{ ai_response.course_title }}</h3>
+            <p><strong>Type:</strong> {{ ai_response.course_type|title }}</p>
+            <p>
+              <strong>Description:</strong> {{ ai_response.course_description }}
+            </p>
+
+            {% if ai_response.modules %}
+            <h4>Modules:</h4>
+            <ol>
+              {% for module in ai_response.modules %}
+              <li>
+                <strong>{{ module.title }}</strong>
+                <p>{{ module.description }}</p>
+              </li>
+              {% endfor %}
+            </ol>
+            {% endif %} {% else %}
+            <pre>{{ message.content|pprint }}</pre>
+            {% endif %}
+          </div>
+
+          {% if session.status == 'title_modules' %}
+          <div class="action-buttons">
+            <p>
+              Do you want to proceed with this course structure, or would you
+              like to make changes?
+            </p>
+          </div>
+          {% endif %} {% else %} {{ message.content|linebreaks }} {% endif %}
+        </div>
+      </div>
+      {% endif %} {% endfor %}
+    </div>
+
+    <div class="response-form">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="{{ form.prompt.id_for_label }}" class="form-label"
+            >Your Response</label
+          >
+          {{ form.prompt }}
+        </div>
+
+        {% if session.status == 'title_modules' and is_json %}
+        <div class="alert alert-info">
+          <p>
+            <i class="fas fa-info-circle"></i> <strong>Tip:</strong> To accept
+            this structure and continue, type "Accept" or "Yes". To make
+            changes, provide specific feedback.
+          </p>
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between">
+          <a
+            href="{% url 'courses:manage_courses' %}"
+            class="btn btn-outline-secondary"
+          >
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">Send Response</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

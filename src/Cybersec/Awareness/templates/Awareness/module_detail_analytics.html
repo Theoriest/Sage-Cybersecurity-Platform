@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Analytics - {{ module.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .analytics-card {
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .analytics-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .stat-highlight {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #0d6efd;
+    margin-bottom: 0;
+  }
+  
+  .stat-label {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #6c757d;
+    letter-spacing: 0.5px;
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 1rem;
+  }
+  
+  .top-performers-list .list-group-item {
+    border-left: 0;
+    border-right: 0;
+  }
+  
+  .top-performers-list .list-group-item:first-child {
+    border-top: 0;
+  }
+  
+  .top-performers-list .list-group-item:last-child {
+    border-bottom: 0;
+  }
+  
+  .progress-sm {
+    height: 6px;
+    margin-bottom: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_detail' module_id=module.id %}">{{ module.title }}</a>
+      </li>
+      <li class="breadcrumb-item active">Analytics</li>
+    </ol>
+  </nav>
+  
+  <div class="analytics-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1 class="mb-0">{{ module.title }} - Analytics</h1>
+        <p class="lead text-muted">Performance metrics and user engagement data</p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="{% url 'awareness:module_detail' module_id=module.id %}" class="btn btn-outline-secondary me-2">
+          <i class="fas fa-arrow-left me-1"></i> Back to Module
+        </a>
+        <a href="#" class="btn btn-outline-primary" onclick="window.print();">
+          <i class="fas fa-print me-1"></i> Print Report
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Key Metrics -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card analytics-card">
+        <div class="card-body text-center">
+          <p class="stat-highlight">{{ total_attempts|default:0 }}</p>
+          <p class="stat-label">Total Attempts</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card analytics-card">
+        <div class="card-body text-center">
+          <p class="stat-highlight">{{ pass_rate|default:0 }}%</p>
+          <p class="stat-label">Pass Rate</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card analytics-card">
+        <div class="card-body text-center">
+          <p class="stat-highlight">{{ avg_score|default:0 }}%</p>
+          <p class="stat-label">Average Score</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card analytics-card">
+        <div class="card-body text-center">
+          <p class="stat-highlight">{{ unique_users|default:0 }}</p>
+          <p class="stat-label">Unique Users</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <!-- Charts Section -->
+    <div class="col-lg-8">
+      <!-- Score Distribution -->
+      <div class="card analytics-card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Score Distribution</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="scoreDistributionChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Attempts Over Time -->
+      <div class="card analytics-card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Attempts Over Time</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="attemptsTimeChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Question Performance -->
+      <div class="card analytics-card">
+        <div class="card-header">
+          <h5 class="mb-0">Question Performance</h5>
+        </div>
+        <div class="card-body">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Correct %</th>
+                <th>Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for question in question_stats %}
+              <tr>
+                <td>{{ question.text|truncatechars:50 }}</td>
+                <td>{{ question.correct_percentage }}%</td>
+                <td>
+                  <div class="progress progress-sm">
+                    <div 
+                      class="progress-bar bg-success" 
+                      role="progressbar" 
+                      style="width: {{ question.correct_percentage }}%" 
+                      aria-valuenow="{{ question.correct_percentage }}" 
+                      aria-valuemin="0" 
+                      aria-valuemax="100">
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center">No data available</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Insights Section -->
+    <div class="col-lg-4">
+      <!-- Top Performers -->
+      <div class="card analytics-card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Top Performers</h5>
+        </div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush top-performers-list">
+            {% for user in top_performers %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-0">{{ user.get_full_name|default:user.username }}</h6>
+                <small class="text-muted">{{ user.score }}% score</small>
+              </div>
+              <span class="badge bg-primary rounded-pill">{{ user.attempts }} attempt{{ user.attempts|pluralize }}</span>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center">No attempts recorded yet</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Time to Complete -->
+      <div class="card analytics-card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Completion Time</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <canvas id="timeToCompleteChart"></canvas>
+          </div>
+          <div class="text-center mt-3">
+            <p class="mb-0">Average time: <strong>{{ avg_time_mins|default:0 }} minutes</strong></p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent Activity -->
+      <div class="card analytics-card">
+        <div class="card-header">
+          <h5 class="mb-0">Recent Activity</h5>
+        </div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush">
+            {% for attempt in recent_attempts %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <h6 class="mb-0">{{ attempt.user.get_full_name|default:attempt.user.username }}</h6>
+                  <small class="text-muted">{{ attempt.score }}% - {{ attempt.attempt_date|date:"M d, Y H:i" }}</small>
+                </div>
+                {% if attempt.passed %}
+                <span class="badge bg-success">Passed</span>
+                {% else %}
+                <span class="badge bg-danger">Failed</span>
+                {% endif %}
+              </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center">No recent activity</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Score Distribution Chart
+    const scoreCtx = document.getElementById('scoreDistributionChart').getContext('2d');
+    const scoreDistributionChart = new Chart(scoreCtx, {
+      type: 'bar',
+      data: {
+        labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+        datasets: [{
+          label: 'Number of Attempts',
+          data: {{ score_distribution|safe|default:"[0, 0, 0, 0, 0]" }},
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.5)',
+            'rgba(255, 159, 64, 0.5)',
+            'rgba(255, 205, 86, 0.5)',
+            'rgba(75, 192, 192, 0.5)',
+            'rgba(54, 162, 235, 0.5)'
+          ],
+          borderColor: [
+            'rgb(255, 99, 132)',
+            'rgb(255, 159, 64)',
+            'rgb(255, 205, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(54, 162, 235)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+    
+    // Attempts Over Time Chart
+    const timeCtx = document.getElementById('attemptsTimeChart').getContext('2d');
+    const attemptsTimeChart = new Chart(timeCtx, {
+      type: 'line',
+      data: {
+        labels: {{ time_labels|safe|default:"[]" }},
+        datasets: [{
+          label: 'Number of Attempts',
+          data: {{ time_data|safe|default:"[]" }},
+          fill: false,
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+    
+    // Time to Complete Chart
+    const completionCtx = document.getElementById('timeToCompleteChart').getContext('2d');
+    const timeToCompleteChart = new Chart(completionCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['< 5 min', '5-10 min', '10-15 min', '> 15 min'],
+        datasets: [{
+          label: 'Completion Time',
+          data: {{ completion_time_data|safe|default:"[0, 0, 0, 0]" }},
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.5)',
+            'rgba(75, 192, 192, 0.5)',
+            'rgba(255, 205, 86, 0.5)',
+            'rgba(255, 99, 132, 0.5)'
+          ],
+          borderColor: [
+            'rgb(54, 162, 235)',
+            'rgb(75, 192, 192)',
+            'rgb(255, 205, 86)',
+            'rgb(255, 99, 132)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  });
+</script>
+{% endblock %}
+{% endblock %}

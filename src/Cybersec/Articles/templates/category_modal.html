@@ -1,0 +1,56 @@
+<!-- Modal for adding a new category -->
+<div
+  class="modal fade"
+  id="addCategoryModal"
+  tabindex="-1"
+  aria-labelledby="addCategoryModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <form
+        id="categoryForm"
+        method="POST"
+        action="{% url 'articles:add_category' %}"
+      >
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="category_name" class="form-label">Category Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="category_name"
+              name="category_name"
+              required
+            />
+            <div class="form-text">
+              Enter a descriptive name for the new security category.
+            </div>
+          </div>
+          <!-- Store the current page URL so we can redirect back here -->
+          <input type="hidden" name="next" value="{{ request.path }}" />
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Add Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

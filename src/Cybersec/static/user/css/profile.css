@@ -1,0 +1,119 @@
+/* Profile page styling */
+
+/* Profile sidebar */
+.profile-sidebar {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.profile-image-container {
+  padding: 2rem 1rem;
+  position: relative;
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  color: white;
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.profile-initials {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 4px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #3498db;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.profile-actions {
+  padding: 0 1rem 1rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Profile content */
+.card {
+  margin-bottom: 1.5rem;
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 1rem 1.25rem;
+  font-weight: 500;
+}
+
+/* Activity list */
+.activity-list .list-group-item {
+  padding: 1rem;
+  border-left: none;
+  border-right: none;
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: #3498db;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex-grow: 1;
+}
+
+/* Profile picture preview */
+.profile-picture-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #dee2e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .profile-sidebar {
+    margin-bottom: 1.5rem;
+  }
+}

@@ -1,0 +1,16 @@
+{% extends "base.html" %} {% load static %} {% load crispy_forms_tags %} {%
+block title %}User Profile{% endblock %} {% block content %}
+<div class="profile-form">
+  <h2>User Profile</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-group">{{ u_form|crispy }}</div>
+
+    <div class="form-group">{{ p_form|crispy }}</div>
+
+    <button type="submit" class="submit-btn">Update Profile</button>
+  </form>
+</div>
+{% endblock content %}

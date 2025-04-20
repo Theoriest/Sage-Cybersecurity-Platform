@@ -1,0 +1,192 @@
+{% extends "base_nonsoc.html" %} {% load static %} {% load nonsoc_extras %} {% block title %}Learning Progress{% endblock %} {% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="page-title">My Learning Progress</h1>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learning progress content -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4>Enrolled Courses</h4>
+        </div>
+        <div class="card-body">
+          {% if enrollments %}
+          <div class="list-group">
+            {% for enrollment in enrollments %}
+            <div class="list-group-item">
+              <div
+                class="d-flex w-100 justify-content-between align-items-center"
+              >
+                <div>
+                  <h5 class="mb-1">{{ enrollment.course.title }}</h5>
+                  <p class="mb-1 text-muted small">
+                    {{ enrollment.course.description|truncatechars:100 }}
+                  </p>
+                </div>
+                <div class="text-end">
+                  {% if enrollment.completed %}
+                  <span class="badge bg-success">Completed</span>
+                  {% else %}
+                  <div class="d-flex flex-column align-items-end">
+                    <div
+                      class="progress"
+                      style="width: 150px; height: 10px; margin-bottom: 5px"
+                    >
+                      <div
+                        class="progress-bar bg-primary"
+                        role="progressbar"
+                        style="width: {{ enrollment.progress_percentage|default:0 }}%;"
+                        aria-valuenow="{{ enrollment.progress_percentage|default:0 }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                    </div>
+                    <small class="text-muted"
+                      >{{ enrollment.progress_percentage|default:0 }}%
+                      complete</small
+                    >
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="mt-2">
+                <a
+                  href="{% url 'courses:course_detail' course_id=enrollment.course.id %}"
+                  class="btn btn-sm btn-primary"
+                >
+                  {% if enrollment.completed %}Review Course{% else %}Continue
+                  Learning{% endif %}
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-info">
+            <p>You haven't enrolled in any courses yet.</p>
+            <a
+              href="{% url 'courses:course_list' %}"
+              class="btn btn-primary mt-2"
+            >
+              <i class="fas fa-book me-1"></i> Browse Available Courses
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Security Awareness Progress -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4>Security Awareness Progress</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="text-center mb-4">
+                <h5>Security Awareness Level</h5>
+                <div class="display-4 fw-bold">{{ awareness_display }}</div>
+                <div class="progress mt-2" style="height: 20px">
+                  <div
+                    class="progress-bar bg-success"
+                    role="progressbar"
+                    style="width: {{ progress_percentage }}%;"
+                    aria-valuenow="{{ awareness_level }}"
+                    aria-valuemin="0"
+                    aria-valuemax="5"
+                  ></div>
+                </div>
+                <div class="text-muted mt-2">
+                  Level {{ awareness_level }} of 5
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-center mb-4">
+                <h5>Completed Activities</h5>
+                <div class="display-4 fw-bold">{{ completed_trainings }}</div>
+                <div class="text-muted mt-2">Total completed trainings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- Certificates & Achievements -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4>Certificates & Achievements</h4>
+        </div>
+        <div class="card-body">
+          {% if request.user.achievements.exists %}
+          <div class="list-group">
+            {% for achievement in request.user.achievements.all %}
+            <div class="list-group-item">
+              <div class="d-flex align-items-center">
+                <div class="achievement-icon me-3">
+                  <i
+                    class="fas fa-{{ achievement.icon }} fa-2x text-primary"
+                  ></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">{{ achievement.title }}</h6>
+                  <small>{{ achievement.description }}</small><br />
+                  <small class="text-muted"
+                    >Earned on {{ achievement.date_earned|date:"F j, Y"
+                    }}</small
+                  >
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-center text-muted my-4">
+            <i class="fas fa-trophy fa-3x mb-3 text-secondary"></i><br />
+            Complete courses and security awareness activities<br />to earn
+            achievements
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Recommended Courses -->
+      <div class="card">
+        <div class="card-header">
+          <h4>Recommended Next Steps</h4>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-0">
+              <i class="fas fa-book-reader text-primary me-2"></i>
+              <a href="{% url 'courses:course_list' %}?type=awareness"
+                >Browse security awareness courses</a
+              >
+            </li>
+            <li class="list-group-item px-0">
+              <i class="fas fa-newspaper text-primary me-2"></i>
+              <a href="{% url 'non_soc:article_list' %}"
+                >Read security articles</a
+              >
+            </li>
+            <li class="list-group-item px-0">
+              <i class="fas fa-question-circle text-primary me-2"></i>
+              <a href="{% url 'non_soc:create_security_request' %}"
+                >Submit a security question</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends "base.html" %} {% load static %} {% block title %}Complete {{
+module.title }}{% endblock %} {% block extra_css %}
+<style>
+  .question-card {
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  .question-header {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  .question-body {
+    padding: 20px;
+  }
+  .answer-option {
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .answer-option:hover {
+    background-color: #f8f9fa;
+  }
+  .answer-option.selected {
+    background-color: #cfe2ff;
+    border-color: #9ec5fe;
+  }
+  .progress-indicator {
+    margin-bottom: 20px;
+  }
+  .progress-step {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #dee2e6;
+    color: #495057;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    font-weight: bold;
+  }
+  .progress-step.active {
+    background-color: #0d6efd;
+    color: white;
+  }
+  .progress-step.completed {
+    background-color: #198754;
+    color: white;
+  }
+  .timer {
+    font-size: 16px;
+    color: #6c757d;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ module.title }}</h1>
+        <div class="timer" id="timer">00:00</div>
+      </div>
+
+      <div class="progress-indicator text-center">
+        {% for i in "12345" %}
+        <div
+          class="progress-step {% if forloop.counter == 1 %}active{% endif %}"
+          id="step-{{ forloop.counter }}"
+        >
+          {{ forloop.counter }}
+        </div>
+        {% endfor %}
+      </div>
+
+      <form method="post" id="moduleForm">
+        {% csrf_token %} {% for question in questions %}
+        <div
+          class="question-card"
+          id="question-{{ forloop.counter }}"
+          {% if forloop.counter > 1 %} style="display: none;"{% endif %} >
+          <div class="question-header">
+            <h5 class="mb-0">Question {{ forloop.counter }} of 5</h5>
+          </div>
+          <div class="question-body">
+            <h5 class="mb-4">{{ question.text }}</h5>
+
+            {% if question.question_type == 'multiple' %}
+            <p class="text-muted mb-3">
+              <i class="fas fa-info-circle me-2"></i> Select all correct answers
+              (one or more)
+            </p>
+
+            {% for answer in question.answers.all %}
+            <div
+              class="answer-option multiple-choice"
+              data-value="{{ answer.id }}"
+            >
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="question_{{ question.id }}"
+                  value="{{ answer.id }}"
+                  id="answer-{{ answer.id }}"
+                />
+                <label class="form-check-label" for="answer-{{ answer.id }}">
+                  {{ answer.text }}
+                </label>
+              </div>
+            </div>
+            {% endfor %} {% else %}
+            <p class="text-muted mb-3">
+              <i class="fas fa-info-circle me-2"></i> Select the correct answer
+            </p>
+
+            {% for answer in question.answers.all %}
+            <div
+              class="answer-option single-choice"
+              data-value="{{ answer.id }}"
+            >
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="question_{{ question.id }}"
+                  value="{{ answer.id }}"
+                  id="answer-{{ answer.id }}"
+                />
+                <label class="form-check-label" for="answer-{{ answer.id }}">
+                  {{ answer.text }}
+                </label>
+              </div>
+            </div>
+            {% endfor %} {% endif %}
+          </div>
+
+          <div class="card-footer d-flex justify-content-between">
+            {% if forloop.counter > 1 %}
+            <button
+              type="button"
+              class="btn btn-outline-secondary prev-btn"
+              data-question="{{ forloop.counter }}"
+            >
+              Previous
+            </button>
+            {% else %}
+            <div></div>
+            {% endif %} {% if forloop.counter < questions|length %}
+            <button
+              type="button"
+              class="btn btn-primary next-btn"
+              data-question="{{ forloop.counter }}"
+            >
+              Next Question
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-success submit-btn">
+              Submit Answers
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Answer option selection
+    document.querySelectorAll('.single-choice').forEach(function(option) {
+      option.addEventListener('click', function() {
+        // Find the radio button and click it
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+
+        // Update UI
+        const questionCard = this.closest('.question-card');
+        questionCard.querySelectorAll('.answer-option').forEach(function(opt) {
+          opt.classList.remove('selected');
+        });
+        this.classList.add('selected');
+      });
+    });
+
+    document.querySelectorAll('.multiple-choice').forEach(function(option) {
+      option.addEventListener('click', function(e) {
+        // Don't toggle if clicked directly on checkbox
+        if (e.target.type === 'checkbox') return;
+
+        // Toggle checkbox
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+
+        // Update UI
+        this.classList.toggle('selected', checkbox.checked);
+      });
+    });
+
+    // Navigation between questions
+    document.querySelectorAll('.next-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const currentQuestion = parseInt(this.getAttribute('data-question'));
+        const currentElement = document.getElementById(`question-${currentQuestion}`);
+        const nextElement = document.getElementById(`question-${currentQuestion + 1}`);
+
+        currentElement.style.display = 'none';
+        nextElement.style.display = 'block';
+
+        // Update progress indicator
+        document.getElementById(`step-${currentQuestion}`).classList.remove('active');
+        document.getElementById(`step-${currentQuestion}`).classList.add('completed');
+        document.getElementById(`step-${currentQuestion + 1}`).classList.add('active');
+
+        // Scroll to top
+        window.scrollTo(0, 0);
+      });
+    });
+
+    document.querySelectorAll('.prev-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const currentQuestion = parseInt(this.getAttribute('data-question'));
+        const currentElement = document.getElementById(`question-${currentQuestion}`);
+        const prevElement = document.getElementById(`question-${currentQuestion - 1}`);
+
+        currentElement.style.display = 'none';
+        prevElement.style.display = 'block';
+
+        // Update progress indicator
+        document.getElementById(`step-${currentQuestion}`).classList.remove('active');
+        document.getElementById(`step-${currentQuestion - 1}`).classList.remove('completed');
+        document.getElementById(`step-${currentQuestion - 1}`).classList.add('active');
+
+        // Scroll to top
+        window.scrollTo(0, 0);
+      });
+    });
+
+    // Timer functionality
+    let seconds = 0;
+    const timerElement = document.getElementById('timer');
+
+    setInterval(function() {
+      seconds++;
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }, 1000);
+
+    // Form submission validation
+    document.getElementById('moduleForm').addEventListener('submit', function(e) {
+      let allAnswered = true;
+
+      {% for question in questions %}
+      const question{{ question.id }}Answered = document.querySelector('input[name="question_{{ question.id }}"]:checked');
+      if (!question{{ question.id }}Answered) {
+        allAnswered = false;
+      }
+      {% endfor %}
+
+      if (!allAnswered) {
+        e.preventDefault();
+        if (!confirm('You have not answered all questions. Are you sure you want to submit?')) {
+          return;
+        }
+      }
+    });
+  });
+</script>
+{% endblock %} {% endblock %}

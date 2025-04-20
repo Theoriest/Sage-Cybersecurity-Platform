@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load static %} 
+{% block title %}{{ module.title}}{% endblock %} 
+{% block extra_css %}
+<style>
+  .module-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .module-difficulty-basic {
+    border-left: 5px solid #28a745;
+  }
+  .module-difficulty-intermediate {
+    border-left: 5px solid #fd7e14;
+  }
+  .module-difficulty-advanced {
+    border-left: 5px solid #dc3545;
+  }
+  .difficulty-badge.basic {
+    background-color: #28a745;
+  }
+  .difficulty-badge.intermediate {
+    background-color: #fd7e14;
+  }
+  .difficulty-badge.advanced {
+    background-color: #dc3545;
+  }
+  .status-passed {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 20px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:course_detail' course_id=module.course.id %}"
+          >{{ module.course.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item active">Awareness Module</li>
+    </ol>
+  </nav>
+
+  <div class="module-header module-difficulty-{{ module.difficulty }}">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1>{{ module.title }}</h1>
+        <p class="lead mb-0">{{ module.description }}</p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <span class="badge difficulty-badge {{ module.difficulty }} mb-2"
+          >{{ module.get_difficulty_display }}</span
+        >
+        <div>
+          <strong class="d-block"
+            >Reward: {{ module.get_point_value }} points</strong
+          >
+          <small class="text-muted">Pass 3/5 questions to earn</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4 class="mb-0">About This Assessment</h4>
+        </div>
+        <div class="card-body">
+          <p>
+            This awareness module tests your understanding of the course
+            <strong>{{ module.course.title }}</strong>.
+          </p>
+
+          <h5 class="mt-4">How It Works</h5>
+          <ul>
+            <li>You'll answer 5 questions about the course content</li>
+            <li>Questions must be completed in one sitting</li>
+            <li>You need to answer at least 3 questions correctly to pass</li>
+            <li>
+              If you don't pass, you can try again with different questions
+            </li>
+            <li>
+              When you pass, you'll receive {{ module.get_point_value }} points
+              and can review your answers
+            </li>
+          </ul>
+
+          {% if has_passed %}
+          <div class="status-passed">
+            <h5><i class="fas fa-check-circle me-2"></i> Module Completed!</h5>
+            <p class="mb-0">
+              You've already passed this awareness module and earned the points.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+        <div class="card-footer">
+          {% if has_passed %}
+          <div class="d-flex justify-content-between">
+            <a
+              href="{% url 'courses:course_detail' course_id=module.course.id %}"
+              class="btn btn-outline-secondary"
+              >Back to Course</a
+            >
+            {% if passed_attempt %}
+            <a
+              href="{% url 'awareness:review_attempt' attempt_id=passed_attempt.id %}"
+              class="btn btn-primary"
+              >Review My Answers</a
+            >
+            {% else %}
+            <button class="btn btn-primary" disabled>
+              Review Not Available
+            </button>
+            {% endif %}
+          </div>
+          {% else %}
+          <a
+            href="{% url 'awareness:start_module' module_id=module.id %}"
+            class="btn btn-primary"
+          >
+            {% if ongoing_attempt %}Continue Attempt{% else %}Start Module {% endif %}
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Course Information</h5>
+        </div>
+        <div class="card-body">
+          <h5>{{ module.course.title }}</h5>
+          <p>{{ module.course.description|truncatechars:150 }}</p>
+
+          {% if enrollment %}
+          <div class="alert alert-success mb-0">
+            <i class="fas fa-check-circle me-2"></i> You've completed this
+            course
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

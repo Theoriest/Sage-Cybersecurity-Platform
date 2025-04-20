@@ -1,0 +1,253 @@
+{% extends "base_nonsoc.html" %} {% load static %} {% block title %}Security
+Portal - Dashboard{% endblock %} {% block extra_css %}
+<link rel="stylesheet" href="{% static 'nonsoc/css/dashboard.css' %}" />
+{% endblock %} {% block nonsoc_content %}
+<div class="container-fluid dashboard-container">
+  <!-- Welcome section with user stats -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="welcome-banner p-4">
+        <h1>Welcome, {{ request.user.first_name }}</h1>
+        <p class="lead">
+          Your security awareness journey continues. Stay informed and
+          protected.
+        </p>
+        <div class="user-stats mt-3">
+          <div class="stat-item">
+            <span class="stat-label">Security Level</span>
+            <span class="stat-value"
+              >{{ awareness_level_display|default:"Beginner" }}</span
+            >
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Completed Trainings</span>
+            <span class="stat-value"
+              >{{ completed_trainings|default:"0" }}</span
+            >
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Department Average</span>
+            <span class="stat-value"
+              >{{ department_avg_level|default:"0" }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="notifications-card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Notifications</h5>
+          <a
+            href="{% url 'non_soc:notifications' %}"
+            class="btn btn-sm btn-link"
+            >View All</a
+          >
+        </div>
+        <div class="notification-list">
+          {% for notification in notifications %}
+          <div
+            class="notification-item {% if not notification.is_read %}unread{% endif %}"
+          >
+            <div class="notification-icon">
+              {% if notification.notification_type == 'course' %}
+              <i class="fas fa-book-open"></i>
+              {% elif notification.notification_type == 'security' %}
+              <i class="fas fa-shield-alt"></i>
+              {% else %}
+              <i class="fas fa-bell"></i>
+              {% endif %}
+            </div>
+            <div class="notification-content">
+              <div class="notification-text">{{ notification.message }}</div>
+              <div class="notification-time">
+                {{ notification.created_at|date:"M d, h:i A" }}
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted small">No new notifications</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rest of dashboard content -->
+  <div class="row">
+    <!-- Articles section -->
+    <div class="col-lg-8">
+      <div class="content-section mb-4">
+        <div
+          class="section-header d-flex justify-content-between align-items-center"
+        >
+          <h2>Security Articles</h2>
+          <a
+            href="{% url 'non_soc:article_list' %}"
+            class="btn btn-sm btn-outline-primary"
+            >View All</a
+          >
+        </div>
+        <div class="row">
+          {% for article in articles %}
+          <div class="col-md-6 mb-3">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title">{{ article.title }}</h5>
+                <p class="card-text">{{ article.description|safe }}</p>
+                <a
+                  href="{% url 'non_soc:article_detail' article_id=article.id %}"
+                  class="btn btn-sm btn-primary"
+                  >Read More</a
+                >
+              </div>
+              <div class="card-footer text-muted">
+                <small>{{ article.created_at|date:"F d, Y" }}</small>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <p>No articles available.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Course Progress Section -->
+      <div class="section mt-4">
+        <div class="section-header">
+          <h2>My Learning Progress</h2>
+          <a
+            href="{% url 'non_soc:user_progress' %}""
+            class="btn btn-sm btn-outline-primary"
+            >View All</a
+          >
+        </div>
+        <div class="row">
+          {% if user.course_enrollments.exists %} {% for enrollment in user.course_enrollments.all|slice:":3" %}
+          <div class="col-md-4 mb-4">
+            <div class="course-card">
+              <h5>{{ enrollment.course.title }}</h5>
+              <p class="small text-muted">
+                {{ enrollment.course.description|truncatechars:80 }}
+              </p>
+              <div class="mt-2 mb-2">
+                <div class="progress" style="height: 8px">
+                  <div
+                    class="progress-bar"
+                    role="progressbar"
+                    style="width: {{ enrollment.progress_value }}%"
+                    aria-valuenow="{{ enrollment.progress_value }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                  <small class="progress-text"
+                    >{{ enrollment.progress_value }}% complete</small
+                  >
+                  <small class="progress-text">
+                    {% if enrollment.completed %} Completed {% else %} In
+                    Progress {% endif %}
+                  </small>
+                </div>
+              </div>
+              <a
+                href="{% url 'courses:course_learn' enrollment_id=enrollment.id %}"
+                class="btn btn-sm btn-primary"
+              >
+                {% if enrollment.completed %}Review{% else %}Continue{% endif %}
+              </a>
+            </div>
+          </div>
+          {% endfor %} {% else %}
+          <div class="col-12">
+            <div class="alert alert-info">
+              <p>You are not enrolled in any courses yet.</p>
+              <a
+                href="{% url 'courses:course_list' %}"
+                class="btn btn-sm btn-primary mt-2"
+                >Browse Available Courses</a
+              >
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right sidebar -->
+    <div class="col-lg-4">
+      <!-- Security awareness -->
+      <div class="sidebar-section mb-4">
+        <h3>Security Awareness</h3>
+        <div class="list-group">
+          {% for module in awareness_modules %}
+          <div class="list-group-item">
+            <h5 class="mb-1">{{ module.title }}</h5>
+            <p class="mb-1 small">{{ module.description|truncatechars:80 }}</p>
+            <div class="d-flex justify-content-between">
+              <span class="badge bg-info">{{ module.get_point_value }} points</span>
+              {% if module.is_passed %}
+              <span class="badge bg-success">Completed</span>
+              {% else %}
+              <a href="{% url 'awareness:take_module' module_id=module.id %}" class="btn btn-sm btn-outline-primary">
+                Take Module
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item">
+            <p>Complete courses to unlock awareness modules.</p>
+            <a href="{% url 'courses:course_list' %}" class="btn btn-sm btn-primary">Browse Courses</a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Security requests -->
+      <div class="sidebar-section mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3>Your Security Requests</h3>
+          <a
+            href="{% url 'non_soc:create_security_request' %}"
+            class="btn btn-sm btn-primary"
+            >New Request</a
+          >
+        </div>
+        <div class="list-group">
+          {% for request in user_requests|slice:":3" %}
+          <a
+            href="{% url 'non_soc:security_request_detail' request_id=request.id %}"
+            class="list-group-item list-group-item-action"
+          >
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">{{ request.title }}</h5>
+              <span class="badge bg-{{ request.status }}"
+                >{{ request.get_status_display }}</span
+              >
+            </div>
+            <small class="text-muted"
+              >Created: {{ request.created_at|date:"M d, Y" }}</small
+            >
+          </a>
+          {% empty %}
+          <div class="list-group-item">
+            <p>No security requests.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  // Initialize tooltips
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>
+{% endblock %}

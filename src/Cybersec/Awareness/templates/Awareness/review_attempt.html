@@ -1,0 +1,226 @@
+{% extends "base.html" %} {% load static %} {% load awareness_filters %} {% block title %}Review Results - {{
+module.title }}{% endblock %} {% block extra_css %}
+<style>
+  .review-header {
+    background-color: #d1e7dd;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .review-card {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+  .answer-correct {
+    border-left: 4px solid #198754;
+  }
+  .answer-incorrect {
+    border-left: 4px solid #dc3545;
+  }
+  .correct-answer {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+  .incorrect-answer {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+  .badge-score {
+    font-size: 1.2rem;
+    padding: 0.5rem 0.75rem;
+    margin-right: 0.5rem;
+  }
+  .explanation-box {
+    background-color: #e9ecef;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 15px;
+    border-left: 4px solid #0d6efd;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:course_detail' course_id=module.course.id %}"
+          >{{ module.course.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:take_module' module_id=module.id %}"
+          >Awareness Module</a
+        >
+      </li>
+      <li class="breadcrumb-item active">Review Results</li>
+    </ol>
+  </nav>
+
+  <div class="review-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1>Module Completed!</h1>
+        <p class="lead mb-0">
+          You've successfully completed the {{ module.title }} awareness module.
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <h2>
+          <span class="badge bg-success badge-score"
+            >{{ attempt.score }}/5</span
+          >
+          <span>Score</span>
+        </h2>
+        {% if attempt.time_taken %}
+        <p class="text-muted">
+          Completed in {{ attempt.time_taken|get_minutes }} minutes {{ attempt.time_taken|get_seconds }} seconds
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <h2 class="mb-4">Question Review</h2>
+
+      {% for response in responses %}
+      <div
+        class="card review-card mb-4 {% if response.is_correct %}answer-correct{% else %}answer-incorrect{% endif %}"
+      >
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Question {{ forloop.counter }}</h5>
+          {% if response.is_correct %}
+          <span class="badge bg-success">Correct</span>
+          {% else %}
+          <span class="badge bg-danger">Incorrect</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <h5>{{ response.question.text }}</h5>
+
+          <div class="mt-3 mb-3">
+            <h6>
+              Your Answer
+              {% if response.question.is_multiple_choice %}s
+              {% endif %}:
+            </h6>
+            {% for answer in response.selected_answers.all %}
+            <div
+              class="{% if answer.is_correct %}correct-answer{% else %}incorrect-answer{% endif %} mb-2"
+            >
+              {{ answer.text }} {% if answer.is_correct %}
+              <span class="float-end"
+                ><i class="fas fa-check text-success"></i
+              ></span>
+              {% else %}
+              <span class="float-end"
+                ><i class="fas fa-times text-danger"></i
+              ></span>
+              {% endif %}
+            </div>
+            {% empty %}
+            <div class="incorrect-answer">No answer selected</div>
+            {% endfor %}
+          </div>
+
+          {% if not response.is_correct %}
+          <div class="mt-3">
+            <h6>
+              Correct Answer
+              {% if response.question.answers.filter.count > 1 %}s{% endif %}:
+            </h6>
+            {% for answer in response.question.answers.filter %} 
+            {% if answer.is_correct %}
+            <div class="correct-answer mb-2">
+              {{ answer.text }}
+              <span class="float-end"
+                ><i class="fas fa-check text-success"></i
+              ></span>
+            </div>
+            {% endif %} {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="explanation-box">
+            <h6><i class="fas fa-info-circle me-2"></i> Explanation:</h6>
+            <p class="mb-0">{{ response.question.explanation }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Your Rewards</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="display-5 me-3">{{ module.get_point_value }}</div>
+            <div>
+              <h5 class="mb-0">Points Earned</h5>
+              <p class="text-muted mb-0">Added to your account</p>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <h6>Badge Earned:</h6>
+            <div class="alert alert-info">
+              <div class="d-flex align-items-center">
+                <div class="me-3">
+                  <i class="fas fa-award fa-2x"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0">{{ module.title }} Completion</h6>
+                  <small
+                    >{{ module.get_difficulty_display }} Security
+                    Knowledge</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">What's Next?</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <i class="fas fa-undo-alt me-2 text-primary"></i>
+              <a href="{% url 'awareness:take_module' module_id=module.id %}"
+                >Return to module overview</a
+              >
+            </li>
+            <li class="list-group-item">
+              <i class="fas fa-book me-2 text-primary"></i>
+              <a
+                href="{% url 'courses:course_detail' course_id=module.course.id %}"
+                >Back to course</a
+              >
+            </li>
+            <li class="list-group-item">
+              <i class="fas fa-list me-2 text-primary"></i>
+              <a href="{% url 'courses:course_list' %}">Browse more courses</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

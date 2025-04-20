@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block title %}Incident: {{ incident.title }}{%
+endblock %} {% block content %}
+<div class="container">
+  <h1>{{ incident.title }}</h1>
+  <div class="card mb-3">
+    <div class="card-header">
+      <span class="badge bg-{{ incident.severity }}"
+        >{{ incident.get_severity_display }}</span
+      >
+      <span class="badge bg-{{ incident.status }}"
+        >{{ incident.get_status_display }}</span
+      >
+    </div>
+    <div class="card-body">
+      <p>{{ incident.description }}</p>
+    </div>
+    <div class="card-footer">
+      <small
+        >Reported by: {{
+        incident.reporter.get_full_name|default:incident.reporter.username
+        }}</small
+      >
+      <small class="float-right"
+        >Created: {{ incident.created_at|date:"M d, Y" }}</small
+      >
+    </div>
+  </div>
+
+  <h2>Responses</h2>
+  {% if responses %} {% for response in responses %}
+  <div class="card mb-2">
+    <div class="card-body">
+      <p>{{ response.content }}</p>
+      <p><strong>Action taken:</strong> {{ response.action_taken }}</p>
+      <small
+        >By: {{
+        response.responder.get_full_name|default:response.responder.username }}
+        on {{ response.created_at|date:"M d, Y H:i" }}</small
+      >
+    </div>
+  </div>
+  {% endfor %} {% else %}
+  <p>No responses yet.</p>
+  {% endif %}
+
+  <a
+    href="{% url 'soc:add_incident_response' pk=incident.id %}"
+    class="btn btn-primary"
+    >Add Response</a
+  >
+  <a href="{% url 'soc:dashboard' %}" class="btn btn-secondary"
+    >Back to Dashboard</a
+  >
+</div>
+{% endblock %}

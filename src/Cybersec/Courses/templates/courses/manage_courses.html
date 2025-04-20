@@ -1,0 +1,92 @@
+{% extends "base.html" %} {% load static %} {% block title %}Manage Courses{% endblock %} 
+{% block extra_css %}
+<style>
+  .course-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  .enrollment-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.8rem;
+  }
+  .status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  .action-buttons {
+    margin-top: 15px;
+  }
+  .action-buttons .btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Manage Courses</h1>
+    <a href="{% url 'courses:create_course_start' %}" class="btn btn-primary">
+      Create New Course
+    </a>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for course in courses %}
+    <div class="col">
+      <div class="card course-card h-100 position-relative">
+        {% if course.course_type == 'advanced' %}
+        <span class="badge bg-danger status-badge">Advanced</span>
+        {% else %}
+        <span class="badge bg-info status-badge">Awareness</span>
+        {% endif %} {% if course.enrollment_count > 0 %}
+        <span class="badge bg-success enrollment-badge"
+          >{{ course.enrollment_count }} Enrolled</span
+        >
+        {% endif %}
+
+        <div class="card-body">
+          <h5 class="card-title">{{ course.title }}</h5>
+          <div class="d-flex justify-content-between">
+            <span class="badge bg-secondary"
+              >{{ course.modules.count }} Modules</span
+            >
+            <small class="text-muted"
+              >Created: {{ course.created_at|date:"M d, Y" }}</small
+            >
+          </div>
+          <p class="card-text mt-2">
+            {{ course.description|truncatechars:150 }}
+          </p>
+
+          <div class="action-buttons">
+            <a
+              href="{% url 'courses:course_detail' course_id=course.id %}"
+              class="btn btn-sm btn-primary"
+            >
+              <i class="fas fa-eye"></i> View
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        <p>You haven't created any courses yet.</p>
+        <a
+          href="{% url 'courses:create_course_start' %}"
+          class="btn btn-primary"
+          >Create your first course</a
+        >
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

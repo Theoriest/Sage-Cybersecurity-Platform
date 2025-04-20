@@ -1,0 +1,277 @@
+{% extends "base.html" %} 
+{% load static %} 
+{% block title %}{{ chapter.title }}| {{ course.title }}{% endblock %} 
+{% block extra_css %}
+<style>
+  .chapter-sidebar {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+  .module-header {
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .chapter-list {
+    list-style-type: none;
+    padding-left: 15px;
+    margin-bottom: 10px;
+  }
+  .chapter-item {
+    padding: 5px 0;
+  }
+  .chapter-item.active {
+    font-weight: bold;
+    color: #0d6efd;
+  }
+  .chapter-item.completed {
+    text-decoration: none;
+    color: #198754;
+  }
+  .chapter-item.completed::before {
+    content: "✓ ";
+  }
+  .chapter-item.current::before {
+    content: "▶ ";
+  }
+  .quiz-container {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .navigation-buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <!-- Left sidebar for course navigation -->
+    <div class="col-md-3 col-lg-2 bg-light sidebar chapter-sidebar py-3">
+      <div class="d-flex align-items-center mb-3">
+        <a
+          href="{% if request.user.user_type == 'soc' %}{% url 'soc_dashboard' %}{% else %}{% url 'non_soc_dashboard' %}{% endif %}"
+          class="btn btn-sm btn-outline-secondary me-2"
+        >
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <h5 class="mb-0">{{ course.title }}</h5>
+      </div>
+
+      {% for module_id, module_data in module_progress.items %}
+      <div class="module-section mb-3">
+        <div
+          class="module-header"
+          data-bs-toggle="collapse"
+          data-bs-target="#module-{{ module_data.module.id }}"
+        >
+          {{ module_data.module.title }}
+          <i class="fas fa-chevron-down float-end"></i>
+        </div>
+        <ul
+          id="module-{{ module_data.module.id }}"
+          class="chapter-list collapse {% if module_data.module.id == chapter.module.id %}show{% endif %}"
+        >
+          {% for prog in module_data.chapters %}
+          <li
+            class="chapter-item {% if prog.chapter.id == chapter.id %}active current{% endif %} {% if prog.completed %}completed{% endif %}"
+          >
+            <a
+              href="{% url 'courses:chapter_view' chapter_id=prog.chapter.id %}"
+              class="{% if prog.completed %}text-success{% endif %}"
+            >
+              {{ prog.chapter.title }} {% if prog.chapter.is_summary %}<small>(summary)</small>{% endif %}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Main content area -->
+    <main class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <a href="{% url 'courses:course_list' %}?enrolled=true"
+                >My Courses</a
+              >
+            </li>
+            <li class="breadcrumb-item">
+              <a
+                href="{% url 'courses:course_learn' enrollment_id=enrollment.id %}"
+                >{{ course.title }}</a
+              >
+            </li>
+            <li class="breadcrumb-item">{{ module.title }}</li>
+            <li class="breadcrumb-item active" aria-current="page">
+              {{ chapter.title }}
+            </li>
+          </ol>
+        </nav>
+
+        <!-- User profile section -->
+        <div class="d-flex align-items-center">
+          <span class="me-2"
+            >{{ request.user.first_name }} {{ request.user.last_name }}</span
+          >
+          {% if request.user.user_type == 'soc' %}
+          <img
+            src="{{ request.user.soc_profile.profile_picture.url }}"
+            alt="Profile"
+            class="rounded-circle"
+            width="40"
+            height="40"
+          />
+          {% else %}
+          <img
+            src="{{ request.user.non_soc_profile.profile_picture.url }}"
+            alt="Profile"
+            class="rounded-circle"
+            width="40"
+            height="40"
+          />
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Chapter content -->
+        <div class="col-md-8">
+          <div class="card mb-4">
+            <div class="card-header">
+              <h2>{{ chapter.title }}</h2>
+            </div>
+            <div class="card-body">{{ chapter.content|safe }}</div>
+          </div>
+
+          <!-- Navigation buttons -->
+          <div class="navigation-buttons">
+            {% if previous_chapter %}
+            <a
+              href="{% url 'courses:chapter_view' chapter_id=previous_chapter.id %}"
+              class="btn btn-outline-primary"
+            >
+              <i class="fas fa-arrow-left"></i> Previous: {{ previous_chapter.title }}
+            </a>
+            {% else %}
+            <div></div>
+            {% endif %} {% if progress.completed or chapter.is_summary %} {% if next_chapter %}
+            <a
+              href="{% url 'courses:chapter_view' chapter_id=next_chapter.id %}"
+              class="btn btn-primary"
+            >
+              Next: {{ next_chapter.title }} <i class="fas fa-arrow-right"></i>
+            </a>
+            {% elif is_final_chapter %}
+            <a
+              href="{% url 'courses:evaluate_course' enrollment_id=enrollment.id %}"
+              class="btn btn-success"
+            >
+              Complete Course <i class="fas fa-check"></i>
+            </a>
+            {% endif %} {% endif %}
+          </div>
+        </div>
+
+        <!-- Quiz section -->
+        <div class="col-md-4">
+          {% if not chapter.is_summary and not progress.completed %}
+          <div class="quiz-container card">
+            <div class="card-header">
+              <h3>Chapter Quiz</h3>
+              <p class="text-muted mb-0">
+                Complete this quiz to progress to the next chapter
+              </p>
+            </div>
+            <div class="card-body">
+              <form
+                method="post"
+                action="{% url 'courses:submit_quiz' chapter_id=chapter.id %}"
+              >
+                {% csrf_token %} {% for field in quiz_form %}
+                <div class="mb-4">
+                  <h5>{{ field.label }}</h5>
+                  <div class="form-check">{{ field }}</div>
+                </div>
+                {% endfor %}
+
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    Submit Answers
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          {% elif chapter.is_summary %}
+          <div class="quiz-container card">
+            <div class="card-header">
+              <h3>Module Summary</h3>
+            </div>
+            <div class="card-body">
+              <p>This is a summary chapter. No quiz is required.</p>
+
+              {% if next_chapter %}
+              <div class="d-grid gap-2">
+                <a
+                  href="{% url 'courses:chapter_view' chapter_id=next_chapter.id %}"
+                  class="btn btn-primary"
+                >
+                  Continue to Next Chapter
+                </a>
+              </div>
+              {% elif is_final_chapter %}
+              <div class="d-grid gap-2">
+                <a
+                  href="{% url 'courses:evaluate_course' enrollment_id=enrollment.id %}"
+                  class="btn btn-success"
+                >
+                  Complete Course
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+          <div class="quiz-container card">
+            <div class="card-header">
+              <h3>Chapter Completed</h3>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> You have successfully
+                completed this chapter!
+              </div>
+
+              {% if next_chapter %}
+              <div class="d-grid gap-2">
+                <a
+                  href="{% url 'courses:chapter_view' chapter_id=next_chapter.id %}"
+                  class="btn btn-primary"
+                >
+                  Continue to Next Chapter
+                </a>
+              </div>
+              {% elif is_final_chapter %}
+              <div class="d-grid gap-2">
+                <a
+                  href="{% url 'courses:evaluate_course' enrollment_id=enrollment.id %}"
+                  class="btn btn-success"
+                >
+                  Complete Course
+                </a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}

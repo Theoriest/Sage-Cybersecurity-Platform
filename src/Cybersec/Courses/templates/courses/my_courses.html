@@ -1,0 +1,93 @@
+{% extends "base.html" %} {% load static %} {% block title %}My Courses{%
+endblock %} {% block extra_css %}
+<style>
+  .course-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  .progress {
+    height: 10px;
+  }
+  .completed-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Courses</h1>
+    <a href="{% url 'courses:course_list' %}" class="btn btn-primary">
+      <i class="fas fa-search"></i> Browse More Courses
+    </a>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for enrollment in enrollments %}
+    <div class="col">
+      <div class="card course-card h-100 position-relative">
+        {% if enrollment.completed %}
+        <span class="badge bg-success completed-badge">Completed</span>
+        {% endif %}
+
+        <div class="card-body">
+          <h5 class="card-title">{{ enrollment.course.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            {% if enrollment.course.course_type == 'advanced' %}
+            <span class="badge bg-danger">Advanced</span>
+            {% else %}
+            <span class="badge bg-info">Awareness</span>
+            {% endif %}
+          </h6>
+          <p class="card-text">
+            {{ enrollment.course.description|truncatechars:100 }}
+          </p>
+
+          <div class="mt-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span>Progress:</span>
+              <span>{{ enrollment.progress_percentage|floatformat:1 }}%</span>
+            </div>
+            <div class="progress">
+              <div
+                class="progress-bar {% if enrollment.completed %}bg-success{% endif %}"
+                role="progressbar"
+                style="width: {{ enrollment.progress_percentage|default:0 }}%"
+                aria-valuenow="{{ enrollment.progress_percentage }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-grid">
+            <a
+              href="{% url 'courses:course_learn' enrollment_id=enrollment.id %}"
+              class="btn btn-primary"
+            >
+              {% if enrollment.completed %}
+              <i class="fas fa-sync"></i> Review Again {% else %}
+              <i class="fas fa-play"></i> Continue Learning {% endif %}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        <p>You haven't enrolled in any courses yet.</p>
+        <a href="{% url 'courses:course_list' %}" class="btn btn-primary"
+          >Browse Courses</a
+        >
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

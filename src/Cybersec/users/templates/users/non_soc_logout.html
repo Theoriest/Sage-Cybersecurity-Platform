@@ -1,0 +1,23 @@
+{% extends "base.html" %} {% load static %} {% block title %}Non-SOC Logout{%
+endblock %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-body text-center">
+          <h2 class="card-title mb-4">Non-SOC Logout</h2>
+          <div class="alert alert-success">
+            <p>
+              You have been successfully logged out from the Non-SOC platform.
+            </p>
+          </div>
+          <p>Thank you for using our service.</p>
+          <a href="{% url 'login' %}" class="btn btn-primary mt-3"
+            >Log In Again</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

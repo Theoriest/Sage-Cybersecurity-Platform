@@ -1,0 +1,187 @@
+{% extends "base.html" %} {% load static %} {% block title %}{{ course.title
+}}{% endblock %} {% block extra_css %}
+<style>
+  .module-card {
+    margin-bottom: 1.5rem;
+  }
+  .chapters-list {
+    padding-left: 20px;
+  }
+  .enroll-box {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .already-enrolled {
+    background-color: #d1e7dd;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:course_list' %}">Courses</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ course.title }}
+      </li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <h1>{{ course.title }}</h1>
+
+      <div class="d-flex align-items-center mb-3">
+        <span
+          class="badge {% if course.course_type == 'advanced' %}bg-danger{% else %}bg-info{% endif %} me-2"
+        >
+          {{ course.get_course_type_display }}
+        </span>
+        <span class="text-muted"
+          >Created by {{ course.created_by.first_name }} {{
+          course.created_by.last_name }}</span
+        >
+      </div>
+
+      <div class="mb-4">
+        <p>{{ course.description }}</p>
+      </div>
+
+      <h3 class="mb-3">Course Structure</h3>
+
+      {% for module in modules %}
+      <div class="card module-card">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">Module {{ forloop.counter }}: {{ module.title }}</h5>
+          <span class="badge bg-secondary"
+            >{{ module.chapters.count }} chapters</span
+          >
+        </div>
+        <div class="card-body">
+          <p>{{ module.description }}</p>
+
+          <ul class="chapters-list">
+            {% for chapter in module.chapters.all %}
+            <li>
+              {{ chapter.title }} {% if chapter.is_summary %}
+              <small class="text-muted">(summary)</small>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="col-lg-4">
+      <div
+        class="enroll-box {% if already_enrolled %}already-enrolled{% endif %}"
+      >
+        {% if already_enrolled %}
+        <h4>You're enrolled!</h4>
+        <p>You are already enrolled in this course.</p>
+        <a
+          href="{% url 'courses:course_learn' enrollment_id=enrollment.id %}"
+          class="btn btn-primary w-100"
+          >Continue Learning</a
+        >
+        {% else %}
+        <h4>Enroll in this course</h4>
+        <p>Take this course to enhance your security knowledge.</p>
+        <button id="enrollBtn" class="btn btn-success w-100">Enroll Now</button>
+        {% endif %}
+
+        <hr />
+
+        <div class="course-meta">
+          <div class="d-flex justify-content-between">
+            <span><i class="fas fa-book-open"></i> Modules:</span>
+            <span>{{ modules|length }}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span><i class="fas fa-list-ul"></i> Chapters:</span>
+            <span>{{ total_chapters }}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span><i class="fas fa-calendar-alt"></i> Created:</span>
+            <span>{{ course.created_at|date:"M d, Y" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <a
+        href="{% url 'courses:course_list' %}"
+        class="btn btn-outline-secondary w-100 mt-3"
+      >
+        <i class="fas fa-arrow-left"></i> Back to Courses
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Enrollment Confirmation Modal -->
+<div
+  class="modal fade"
+  id="enrollmentModal"
+  tabindex="-1"
+  aria-labelledby="enrollmentModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="enrollmentModalLabel">
+          Confirm Enrollment
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Are you sure you want to enroll in
+          <strong>{{ course.title }}</strong>?
+        </p>
+        <p>
+          By enrolling, you'll have access to all course materials and can begin
+          learning immediately.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <a
+          href="{% url 'courses:enroll_course' course_id=course.id %}"
+          class="btn btn-success"
+          >Yes, Enroll Me</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const enrollBtn = document.getElementById("enrollBtn");
+    if (enrollBtn) {
+      enrollBtn.addEventListener("click", function () {
+        const enrollModal = new bootstrap.Modal(
+          document.getElementById("enrollmentModal")
+        );
+        enrollModal.show();
+      });
+    }
+  });
+</script>
+{% endblock %} {% endblock %}

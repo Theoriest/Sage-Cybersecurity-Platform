@@ -1,0 +1,209 @@
+{% extends "base_nonsoc.html" %} {% load static %} 
+{% block title %}Notifications{% endblock %} {% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="page-title">Notifications</h1>
+        <button id="markAllReadBtn" class="btn btn-outline-primary">
+          <i class="fas fa-check-double me-1"></i> Mark All as Read
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h4 class="mb-0">Your Notifications</h4>
+          <div class="btn-group">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary active"
+              data-filter="all"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              data-filter="unread"
+            >
+              Unread
+            </button>
+          </div>
+        </div>
+        <div class="list-group list-group-flush notification-list">
+          {% if request.user.notifications.all %} 
+          {% for notification in request.user.notifications.all %}
+          <div
+            class="list-group-item notification-item {% if not notification.is_read %}unread{% endif %}"
+          >
+            <div class="d-flex">
+              <div class="notification-icon me-3">
+                {% if notification.notification_type == 'course' %}
+                <i class="fas fa-book-open text-primary"></i>
+                {% elif notification.notification_type == 'article' %}
+                <i class="fas fa-newspaper text-info"></i>
+                {% elif notification.notification_type == 'achievement' %}
+                <i class="fas fa-trophy text-warning"></i>
+                {% elif notification.notification_type == 'reminder' %}
+                <i class="fas fa-bell text-danger"></i>
+                {% else %}
+                <i class="fas fa-info-circle text-secondary"></i>
+                {% endif %}
+              </div>
+              <div class="notification-content">
+                <h6 class="mb-1">{{ notification.title }}</h6>
+                <p class="mb-1">{{ notification.message }}</p>
+                <small class="text-muted"
+                  >{{ notification.created_at|date:"F j, Y, g:i a" }}</small
+                >
+              </div>
+              <div class="ms-auto">
+                <button
+                  class="btn btn-sm btn-link mark-read-btn"
+                  data-id="{{ notification.id }}"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endfor %} {% else %}
+          <div class="list-group-item text-center py-5">
+            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+            <p class="mb-0">You don't have any notifications yet.</p>
+            <p class="text-muted">
+              Notifications about courses, articles, and security events will
+              appear here.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if request.user.notifications.all %}
+      <div class="mt-4 d-flex justify-content-between">
+        <button class="btn btn-outline-danger" id="clearAllBtn">
+          <i class="fas fa-trash me-2"></i> Clear All Notifications
+        </button>
+        <nav>
+          <ul class="pagination justify-content-end">
+            <li class="page-item disabled">
+              <a class="page-link" href="#" tabindex="-1">Previous</a>
+            </li>
+            <li class="page-item active">
+              <a class="page-link" href="#">1</a>
+            </li>
+            <li class="page-item disabled">
+              <a class="page-link" href="#">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Filter buttons functionality
+    document.querySelectorAll(".btn-group button").forEach((button) => {
+      button.addEventListener("click", function () {
+        // Remove active class from all buttons
+        document.querySelectorAll(".btn-group button").forEach((b) => {
+          b.classList.remove("active");
+        });
+
+        // Add active class to clicked button
+        this.classList.add("active");
+
+        const filter = this.getAttribute("data-filter");
+        filterNotifications(filter);
+      });
+    });
+
+    // Function to filter notifications
+    function filterNotifications(filter) {
+      const items = document.querySelectorAll(".notification-item");
+
+      items.forEach((item) => {
+        if (filter === "all") {
+          item.style.display = "";
+        } else if (filter === "unread" && item.classList.contains("unread")) {
+          item.style.display = "";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    }
+
+    // Mark individual notification as read
+    document.querySelectorAll(".mark-read-btn").forEach((button) => {
+      button.addEventListener("click", function () {
+        const notificationId = this.getAttribute("data-id");
+        const notificationItem = this.closest(".notification-item");
+
+        // In a real app, you would make an AJAX call to mark as read in the backend
+        console.log("Marking notification " + notificationId + " as read");
+
+        // For now just visually update the UI
+        notificationItem.classList.remove("unread");
+      });
+    });
+
+    // Mark all as read
+    const markAllReadBtn = document.getElementById("markAllReadBtn");
+    if (markAllReadBtn) {
+      markAllReadBtn.addEventListener("click", function () {
+        // In a real app, you would make an AJAX call to mark all as read
+        console.log("Marking all notifications as read");
+
+        // For now just visually update the UI
+        document
+          .querySelectorAll(".notification-item.unread")
+          .forEach((item) => {
+            item.classList.remove("unread");
+          });
+      });
+    }
+
+    // Clear all notifications
+    const clearAllBtn = document.getElementById("clearAllBtn");
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener("click", function () {
+        if (confirm("Are you sure you want to clear all notifications?")) {
+          // In a real app, you would make an AJAX call to clear all notifications
+          console.log("Clearing all notifications");
+
+          // For now just visually update the UI
+          document.querySelectorAll(".notification-item").forEach((item) => {
+            item.remove();
+          });
+
+          // Show empty state
+          const notificationList = document.querySelector(".notification-list");
+          const emptyState = document.createElement("div");
+          emptyState.className = "list-group-item text-center py-5";
+          emptyState.innerHTML = `
+            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+            <p class="mb-0">You don't have any notifications yet.</p>
+            <p class="text-muted">Notifications about courses, articles, and security events will appear here.</p>
+          `;
+          notificationList.appendChild(emptyState);
+
+          // Hide pagination and clear all button
+          document.querySelector(
+            ".pagination"
+          ).parentElement.parentElement.style.display = "none";
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

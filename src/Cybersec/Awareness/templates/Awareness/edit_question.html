@@ -1,0 +1,283 @@
+{% extends "base.html" %} {% load static %} {% block title %}Edit Question - {{
+question.module.title }}{% endblock %} {% block extra_css %}
+<style>
+  .answer-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f8f9fa;
+  }
+  .correct-answer {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_detail' module_id=question.module.id %}"
+          >{{ question.module.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:manage_questions' module_id=question.module.id %}"
+          >Manage Questions</a
+        >
+      </li>
+      <li class="breadcrumb-item active">Edit Question</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="mb-0">Edit Question</h2>
+          <p class="text-muted mb-0">{{ question.module.title }}</p>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-4">
+              <label
+                for="{{ question_form.text.id_for_label }}"
+                class="form-label"
+                >Question Text</label
+              >
+              {{ question_form.text }} {% if question_form.text.errors %}
+              <div class="invalid-feedback d-block">
+                {{ question_form.text.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label
+                    for="{{ question_form.question_type.id_for_label }}"
+                    class="form-label"
+                    >Question Type</label
+                  >
+                  {{ question_form.question_type }} 
+                  {% if question_form.question_type.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ question_form.question_type.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Single choice has exactly one correct answer. Multiple choice
+                    can have more than one.
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label
+                    for="{{ question_form.course_module_number.id_for_label }}"
+                    class="form-label"
+                    >Course Module Number</label
+                  >
+                  {{ question_form.course_module_number }} 
+                  {% if question_form.course_module_number.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ question_form.course_module_number.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Select which course module this question relates to (0 = first
+                    module)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="{{ question_form.explanation.id_for_label }}"
+                class="form-label"
+                >Question Explanation</label
+              >
+              {{ question_form.explanation }} {% if question_form.explanation.errors %}
+              <div class="invalid-feedback d-block">
+                {{ question_form.explanation.errors.0 }}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                This explanation will be shown to users during review. Explain
+                why the correct answer is correct.
+              </div>
+            </div>
+
+            <h4 class="mb-3">Answers</h4>
+            <p class="text-muted mb-3">
+              Edit answer choices for this question. Mark at least one answer as
+              correct.
+            </p>
+
+            {{ answer_formset.management_form }}
+            <div id="answers">
+              {% for form in answer_formset %}
+              <div class="answer-card {% if form.initial.is_correct %}correct-answer{% endif %} mb-3">
+                <div class="row">
+                  <div class="col-11">
+                    {{ form.id }}
+                    <div class="mb-3">
+                      <label for="{{ form.text.id_for_label }}" class="form-label"
+                        >Answer Text</label
+                      >
+                      {{ form.text }} {% if form.text.errors %}
+                      <div class="invalid-feedback d-block">
+                        {{ form.text.errors.0 }}
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-1 text-end">
+                    {% if form.DELETE %}
+                    <div class="form-check mt-2">
+                      {{ form.DELETE }}
+                      <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
+                        <i class="fas fa-trash"></i>
+                      </label>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <div class="form-check">
+                    {{ form.is_correct }}
+                    <label for="{{ form.is_correct.id_for_label }}" class="form-check-label">
+                      This is a correct answer
+                    </label>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label
+                    for="{{ form.explanation.id_for_label }}"
+                    class="form-label"
+                    >Answer Explanation</label
+                  >
+                  {{ form.explanation }} {% if form.explanation.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.explanation.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Explain why this answer is correct or incorrect.
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+              <div>
+                <a
+                  href="{% url 'awareness:manage_questions' module_id=question.module.id %}"
+                  class="btn btn-secondary me-2"
+                  >Cancel</a
+                >
+                <button 
+                  type="button"
+                  class="btn btn-danger"
+                  data-bs-toggle="modal" 
+                  data-bs-target="#deleteQuestionModal"
+                  >Delete Question</button
+                >
+              </div>
+              <button type="submit" class="btn btn-primary">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Question Modal -->
+<div class="modal fade" id="deleteQuestionModal" tabindex="-1" aria-labelledby="deleteQuestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteQuestionModalLabel">Delete Question</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <h5><i class="fas fa-exclamation-triangle me-2"></i>Are you sure?</h5>
+          <p>You are about to delete the following question:</p>
+          <blockquote class="blockquote">
+            {{ question.text|truncatechars:100 }}
+          </blockquote>
+          <p class="mb-0">This action cannot be undone.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+          <i class="fas fa-trash me-1"></i> Delete Question
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Toggle answer card styling based on correct checkbox
+    const correctCheckboxes = document.querySelectorAll(
+      "input[type=checkbox][name$=is_correct]"
+    );
+    correctCheckboxes.forEach(function (checkbox) {
+      // Initialize styling
+      updateAnswerCardStyle(checkbox);
+
+      // Update styling on change
+      checkbox.addEventListener("change", function () {
+        updateAnswerCardStyle(this);
+      });
+    });
+
+    function updateAnswerCardStyle(checkbox) {
+      const answerCard = checkbox.closest(".answer-card");
+      if (checkbox.checked) {
+        answerCard.classList.add("correct-answer");
+      } else {
+        answerCard.classList.remove("correct-answer");
+      }
+    }
+    
+    // Handle question deletion
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+      // Create a form and submit it
+      const deleteForm = document.createElement('form');
+      deleteForm.method = 'POST';
+      deleteForm.action = '{% url "awareness:delete_question" question_id=question.id %}';
+      
+      // Add CSRF token
+      const csrfToken = document.createElement('input');
+      csrfToken.type = 'hidden';
+      csrfToken.name = 'csrfmiddlewaretoken';
+      csrfToken.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      deleteForm.appendChild(csrfToken);
+      
+      // Add form to body and submit it
+      document.body.appendChild(deleteForm);
+      deleteForm.submit();
+    });
+  });
+</script>
+{% endblock %} {% endblock %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %} 
+{% load static %} 
+{% block title %}Define Modules | {{course.title }}{% endblock %} 
+{% block extra_css %}
+<style>
+  .course-info {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .modules-container {
+    margin-bottom: 20px;
+  }
+  .module-form {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+  }
+  .remove-module-btn {
+    color: #dc3545;
+    cursor: pointer;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:manage_courses' %}">Courses</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'courses:course_detail' pk=course.id %}"
+          >{{ course.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Define Modules</li>
+    </ol>
+  </nav>
+
+  <div class="course-info">
+    <h1>{{ course.title }}</h1>
+    <p class="lead">{{ course.description }}</p>
+    <span
+      class="badge {% if course.course_type == 'advanced' %}bg-danger{% else %}bg-info{% endif %}"
+    >
+      {{ course.get_course_type_display }}
+    </span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Define Course Modules</h3>
+      <p class="text-muted mb-0">
+        Create modules that will structure your course content.
+      </p>
+    </div>
+    <div class="card-body">
+      <form method="post" id="moduleForm">
+        {% csrf_token %}
+        <input type="hidden" name="replace_existing" value="1" />
+
+        <div id="modulesContainer" class="modules-container">
+          {% for module in modules %}
+          <div class="module-form">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h4 class="mb-0">Module {{ forloop.counter }}</h4>
+              <span class="remove-module-btn"
+                ><i class="fas fa-times"></i
+              ></span>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Title</label>
+              <input
+                type="text"
+                name="module_title"
+                class="form-control"
+                value="{{ module.title }}"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea name="module_description" class="form-control" rows="3">
+{{ module.description }}</textarea
+              >
+            </div>
+            <input
+              type="hidden"
+              name="module_order"
+              value="{{ module.order }}"
+            />
+          </div>
+          {% empty %}
+          <div class="module-form">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h4 class="mb-0">Module 1</h4>
+              <span class="remove-module-btn"
+                ><i class="fas fa-times"></i
+              ></span>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Title</label>
+              <input
+                type="text"
+                name="module_title"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea
+                name="module_description"
+                class="form-control"
+                rows="3"
+              ></textarea>
+            </div>
+            <input type="hidden" name="module_order" value="0" />
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-3">
+          <button
+            type="button"
+            id="addModuleBtn"
+            class="btn btn-outline-secondary"
+          >
+            <i class="fas fa-plus"></i> Add Another Module
+          </button>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="submit" name="back" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Course Structure
+          </button>
+          <button type="submit" name="save_modules" class="btn btn-primary">
+            <i class="fas fa-arrow-right"></i> Continue to Define Chapters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modulesContainer = document.getElementById("modulesContainer");
+    const addModuleBtn = document.getElementById("addModuleBtn");
+    let moduleCount = document.querySelectorAll(".module-form").length;
+
+    // Add module
+    addModuleBtn.addEventListener("click", function () {
+      moduleCount++;
+      const newModule = document.createElement("div");
+      newModule.className = "module-form";
+      newModule.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4 class="mb-0">Module ${moduleCount}</h4>
+                <span class="remove-module-btn"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input type="text" name="module_title" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="module_description" class="form-control" rows="3"></textarea>
+            </div>
+            <input type="hidden" name="module_order" value="${moduleCount - 1}">
+        `;
+      modulesContainer.appendChild(newModule);
+
+      // Add event listener to the new remove button
+      newModule
+        .querySelector(".remove-module-btn")
+        .addEventListener("click", function () {
+          removeModule(this);
+        });
+    });
+
+    // Remove module
+    function removeModule(btn) {
+      // Don't remove if it's the last module
+      if (document.querySelectorAll(".module-form").length <= 1) {
+        alert("You need at least one module in the course.");
+        return;
+      }
+
+      const moduleForm = btn.closest(".module-form");
+      moduleForm.remove();
+
+      // Update module numbers
+      document.querySelectorAll(".module-form").forEach((module, index) => {
+        module.querySelector("h4").textContent = `Module ${index + 1}`;
+        module.querySelector('input[name="module_order"]').value = index;
+      });
+
+      moduleCount = document.querySelectorAll(".module-form").length;
+    }
+
+    // Add event listeners to existing remove buttons
+    document.querySelectorAll(".remove-module-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        removeModule(this);
+      });
+    });
+  });
+</script>
+{% endblock %} {% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Generate Questions - {{ module.title }}{% endblock %} 
+{% block extra_css %}
+<style>
+  .card-highlight {
+    border-left: 4px solid #0d6efd;
+  }
+  .module-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_detail' module_id=module.id %}"
+          >{{ module.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:manage_questions' module_id=module.id %}"
+          >Manage Questions</a
+        >
+      </li>
+      <li class="breadcrumb-item active">Generate Questions</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="mb-0">Generate Questions</h2>
+          <p class="text-muted mb-0">{{ module.title }} - {{ course.title }}</p>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <h5>
+              <i class="fas fa-lightbulb me-2"></i>How Question Generation Works
+            </h5>
+            <p class="mb-0">
+              Questions will be automatically generated based on the course
+              content. We'll try to create one question for each module in the
+              course, with multiple answer choices.
+            </p>
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                {{ form.use_ai }}
+                <label
+                  class="form-check-label"
+                  for="{{ form.use_ai.id_for_label }}"
+                >
+                  Generate questions using AI
+                </label>
+              </div>
+              <div class="form-text">
+                When enabled, questions will be generated using AI based on
+                course content.
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="{{ form.additional_context.id_for_label }}"
+                class="form-label"
+                >Additional Context (optional)</label
+              >
+              {{ form.additional_context }} 
+              {% if form.additional_context.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.additional_context.errors.0 }}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                Provide any additional information that should be considered
+                when generating questions.
+              </div>
+            </div>
+
+            <div class="card mb-4 card-highlight">
+              <div class="card-body">
+                <h5 class="card-title">Course Modules</h5>
+                <p class="text-muted">
+                  Questions will be generated for the following course modules:
+                </p>
+
+                <div class="list-group">
+                  {% for course_module in course.modules.all %}
+                  <div class="list-group-item">
+                    <div
+                      class="d-flex justify-content-between align-items-center"
+                    >
+                      <div>
+                        <span class="badge bg-secondary module-badge me-2"
+                          >Module {{ forloop.counter }}</span
+                        >
+                        {{ course_module.title }}
+                      </div>
+                    </div>
+                  </div>
+                  {% empty %}
+                  <div class="list-group-item text-center text-muted">
+                    No modules found in the course
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <a
+                href="{% url 'awareness:manage_questions' module_id=module.id %}"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </a>
+              <button type="submit" name="generate" class="btn btn-primary">
+                <i class="fas fa-magic me-2"></i> Generate Questions
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

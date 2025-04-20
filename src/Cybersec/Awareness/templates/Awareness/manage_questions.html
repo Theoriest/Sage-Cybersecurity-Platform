@@ -1,0 +1,275 @@
+{% extends "base.html" %} {% load static %} {% load awareness_filters %} 
+{%block title %}Manage Questions - {{ module.title }}{% endblock %} 
+{% block extra_css %}
+<style>
+  .question-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .question-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  }
+  .module-info {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+  }
+  .difficulty-badge.basic {
+    background-color: #28a745;
+  }
+  .difficulty-badge.intermediate {
+    background-color: #fd7e14;
+  }
+  .difficulty-badge.advanced {
+    background-color: #dc3545;
+  }
+  .question-type-badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_detail' module_id=module.id %}"
+          >{{ module.title }}</a
+        >
+      </li>
+      <li class="breadcrumb-item active">Manage Questions</li>
+    </ol>
+  </nav>
+
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1>Manage Questions</h1>
+      <h5 class="text-muted mb-3">{{ module.title }}</h5>
+    </div>
+    <div class="col-md-4 text-end">
+      <div class="btn-group">
+        <a
+          href="{% url 'awareness:add_question' module_id=module.id %}"
+          class="btn btn-primary"
+        >
+          <i class="fas fa-plus-circle"></i> Add Question
+        </a>
+        <a
+          href="{% url 'awareness:generate_questions' module_id=module.id %}"
+          class="btn btn-outline-secondary"
+        >
+          <i class="fas fa-magic"></i> Generate Questions
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="module-info mb-4">
+        <h5>Module Information</h5>
+        <p class="mb-2"><strong>Course:</strong> {{ module.course.title }}</p>
+        <p class="mb-2">
+          <strong>Difficulty:</strong>
+          <span class="badge difficulty-badge {{ module.difficulty }}"
+            >{{ module.get_difficulty_display }}</span
+          >
+        </p>
+        <p class="mb-2"><strong>Points:</strong> {{ module.points }}</p>
+        <p class="mb-0">
+          <strong>Questions:</strong> {{ questions.count }} of 5 recommended
+        </p>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Course Modules</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+          {% for course_module in course_modules %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>{{ course_module.title }}</div>
+              <!-- Check based on module count directly in the view -->
+              {% if module_questions_count|default:"" %} 
+              {% with module_num=forloop.counter0 %} 
+              {% if module_num in module_questions_count %}
+              <span class="badge bg-success">
+                <i class="fas fa-check"></i> Question Added
+              </span>
+              {% else %}
+              <span class="badge bg-warning text-dark">Needs Question</span>
+              {% endif %} {% endwith %} {% else %}
+              <span class="badge bg-warning text-dark">Needs Question</span>
+              {% endif %}
+            </div>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-center text-muted">
+            No modules found in course
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      {% if questions %}
+      <div class="mb-3">
+        <h5>Questions ({{ questions.count }})</h5>
+      </div>
+
+      {% for question in questions %}
+      <div class="card question-card mb-3">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <div>
+            {% if question.course_module_number is not None %}
+            <span class="badge bg-info"
+              >Module {{ question.course_module_number|add:"1" }}</span
+            >
+            {% endif %}
+            <span class="badge bg-secondary question-type-badge ms-2">
+              {{ question.get_question_type_display }}
+            </span>
+          </div>
+          <div>
+            <a
+              href="{% url 'awareness:edit_question' question_id=question.id %}"
+              class="btn btn-sm btn-outline-secondary me-1"
+            >
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            <button
+              type="button" 
+              class="btn btn-sm btn-outline-danger delete-question-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteQuestionModal"
+              data-question-id="{{ question.id }}"
+              data-question-text="{{ question.text|truncatechars:100 }}"
+            >
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">{{ question.text }}</h5>
+
+          {% if question.explanation %}
+          <p>
+            <strong>Explanation:</strong> 
+            {{ question.explanation|truncatechars:100 }}
+          </p>
+          {% endif %}
+
+          <div class="mt-3">
+            <h6>Answers:</h6>
+            <ul class="list-group">
+              {% for answer in question.answers.all %}
+              <li
+                class="list-group-item {% if answer.is_correct %}list-group-item-success{% endif %}"
+              >
+                {{ answer.text }} {% if answer.is_correct %}<span
+                  class="float-end badge bg-success"
+                  >Correct</span
+                >{% endif %}
+              </li>
+              {% empty %}
+              <li class="list-group-item text-center text-danger">
+                No answers added yet!
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="alert alert-info">
+        <h5>No Questions Added Yet</h5>
+        <p>
+          This module needs questions to be functional. You should add at least
+          one question per course module.
+        </p>
+        <p>
+          You can add questions manually or use our AI-assisted question
+          generation.
+        </p>
+        <div class="mt-3">
+          <a
+            href="{% url 'awareness:add_question' module_id=module.id %}"
+            class="btn btn-primary me-2"
+          >
+            <i class="fas fa-plus-circle"></i> Add Question
+          </a>
+          <a
+            href="{% url 'awareness:generate_questions' module_id=module.id %}"
+            class="btn btn-outline-secondary"
+          >
+            <i class="fas fa-magic"></i> Generate Questions with AI
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Delete Question Modal -->
+<div class="modal fade" id="deleteQuestionModal" tabindex="-1" aria-labelledby="deleteQuestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteQuestionModalLabel">Delete Question</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <h5><i class="fas fa-exclamation-triangle me-2"></i>Are you sure?</h5>
+          <p>You are about to delete the following question:</p>
+          <blockquote class="blockquote" id="questionToDelete">
+            <!-- Question text will be inserted here -->
+          </blockquote>
+          <p class="mb-0">This action cannot be undone.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteQuestionForm" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash me-1"></i> Delete Question
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for handling the delete modal -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get all delete buttons
+    const deleteButtons = document.querySelectorAll('.delete-question-btn');
+    
+    // Add click event listeners to each button
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // Get question data from data attributes
+        const questionId = this.getAttribute('data-question-id');
+        const questionText = this.getAttribute('data-question-text');
+        
+        // Update the modal content
+        document.getElementById('questionToDelete').textContent = questionText;
+        
+        // Set the form action
+        const form = document.getElementById('deleteQuestionForm');
+        form.action = "{% url 'awareness:delete_question' question_id=0 %}".replace('0', questionId);
+      });
+    });
+  });
+</script>
+{% endblock %}

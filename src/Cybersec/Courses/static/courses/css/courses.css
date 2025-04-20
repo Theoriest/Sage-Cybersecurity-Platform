@@ -1,0 +1,138 @@
+/* General Styles */
+.course-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  height: 100%;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.course-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.course-enrolled {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 0.8rem;
+}
+
+/* Chapter View Styles */
+.chapter-sidebar {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.module-header {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.chapter-list {
+  list-style-type: none;
+  padding-left: 15px;
+  margin-bottom: 10px;
+}
+
+.chapter-item {
+  padding: 5px 0;
+}
+
+.chapter-item.active {
+  font-weight: bold;
+  color: #0d6efd;
+}
+
+.chapter-item.completed {
+  text-decoration: none;
+  color: #198754;
+}
+
+.chapter-item.completed::before {
+  content: "✓ ";
+}
+
+.chapter-item.current::before {
+  content: "▶ ";
+}
+
+.quiz-container {
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+/* Course Creation Styles */
+.course-creation-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-box {
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.help-text {
+  background-color: #e9f5ff;
+  border-left: 4px solid #0d6efd;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.json-preview {
+  background-color: #f0f0f0;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+/* Evaluation Styles */
+.rating-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.rating-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.rating-inputs {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.rating-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 60px;
+}
+
+.evaluation-card {
+  max-width: 700px;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.congrats-icon {
+  font-size: 60px;
+  color: #198754;
+  text-align: center;
+}

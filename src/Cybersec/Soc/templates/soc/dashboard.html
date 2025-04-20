@@ -1,0 +1,351 @@
+{% extends "base.html" %} {% load static %} {% block title %}SOC
+Dashboard{%endblock %} {% block extra_css %}
+<style>
+  .dashboard-container {
+    padding: 20px;
+  }
+  .metrics-card {
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .metric-box {
+    text-align: center;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+  }
+  .metric-number {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .metric-label {
+    font-size: 14px;
+    color: #6c757d;
+  }
+  .new-incidents {
+    background-color: #f8d7da;
+  }
+  .in-progress {
+    background-color: #fff3cd;
+  }
+  .new-alerts {
+    background-color: #d1ecf1;
+  }
+  .my-tasks {
+    background-color: #d4edda;
+  }
+  .section-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  .card {
+    margin-bottom: 15px;
+  }
+  .severity-critical {
+    border-left: 4px solid #dc3545;
+  }
+  .severity-high {
+    border-left: 4px solid #fd7e14;
+  }
+  .severity-medium {
+    border-left: 4px solid #ffc107;
+  }
+  .severity-low {
+    border-left: 4px solid #28a745;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="dashboard-container">
+  <h1>SOC Dashboard</h1>
+  <p class="lead">Welcome to the Security Operations Center dashboard.</p>
+
+  <!-- Key metrics -->
+  <div class="metrics-card">
+    <div class="row">
+      <div class="col-md-3">
+        <div class="metric-box new-incidents">
+          <div class="metric-number">{{ new_incidents|default:"0" }}</div>
+          <div class="metric-label">New Incidents</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-box in-progress">
+          <div class="metric-number">
+            {{ in_progress_incidents|default:"0" }}
+          </div>
+          <div class="metric-label">Incidents In Progress</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-box new-alerts">
+          <div class="metric-number">{{ new_alerts|default:"0" }}</div>
+          <div class="metric-label">New Alerts</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-box my-tasks">
+          <div class="metric-number">{{ my_tasks|default:"0" }}</div>
+          <div class="metric-label">My Tasks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Recent incidents -->
+    <div class="col-md-6">
+      <div class="section-header">
+        <h3>Recent Incidents</h3>
+      </div>
+      {% if recent_incidents %} {% for incident in recent_incidents %}
+      <div class="card mb-3 severity-{{ incident.severity }}">
+        <div class="card-body">
+          <h5 class="card-title">{{ incident.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            {{ incident.get_severity_display }} | {{ incident.get_status_display
+            }}
+          </h6>
+          <p class="card-text">{{ incident.description|truncatechars:100 }}</p>
+          <a
+            href="{% url 'soc:incident_detail' pk=incident.pk %}"
+            class="btn btn-sm btn-primary"
+            >View Details</a
+          >
+        </div>
+        <div class="card-footer text-muted">
+          Created: {{ incident.created_at|date:"M d, Y H:i" }}
+        </div>
+      </div>
+      {% endfor %}
+      <a href="{% url 'soc:incident_list' %}" class="btn btn-outline-secondary"
+        >View All Incidents</a
+      >
+      {% else %}
+      <p>No recent incidents.</p>
+      {% endif %}
+    </div>
+
+    <!-- Critical alerts -->
+    <div class="col-md-6">
+      <div class="section-header">
+        <h3>Critical Alerts</h3>
+      </div>
+      {% if critical_alerts %} {% for alert in critical_alerts %}
+      <div class="card mb-3 severity-{{ alert.severity }}">
+        <div class="card-body">
+          <h5 class="card-title">{{ alert.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            {{ alert.get_severity_display }} | {{ alert.source }}
+          </h6>
+          <p class="card-text">{{ alert.description|truncatechars:100 }}</p>
+          <a
+            href="{% url 'soc:alert_detail' alert.pk %}"
+            class="btn btn-sm btn-info"
+            >View Alert</a
+          >
+          <a
+            href="{% url 'soc:alert_escalate' alert.pk %}"
+            class="btn btn-sm btn-warning"
+            >Escalate</a
+          >
+        </div>
+        <div class="card-footer text-muted">
+          Created: {{ alert.created_at|date:"M d, Y H:i" }}
+        </div>
+      </div>
+      {% endfor %}
+      <a href="{% url 'soc:alert_list' %}" class="btn btn-outline-secondary"
+        >View All Alerts</a
+      >
+      {% else %}
+      <p>No critical alerts.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <!-- Upcoming tasks -->
+    <div class="col-md-6">
+      <div class="section-header">
+        <h3>My Tasks</h3>
+      </div>
+      {% if upcoming_tasks %}
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in upcoming_tasks %}
+          <tr>
+            <td>
+              <a href="{% url 'soc:task_detail' task.pk %}">{{ task.title }}</a>
+            </td>
+            <td>
+              <span class="badge bg-{{ task.get_priority_display|lower }}"
+                >{{ task.get_priority_display }}</span
+              >
+            </td>
+            <td>{{ task.due_date|default:"No due date" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <a href="{% url 'soc:task_list' %}" class="btn btn-outline-secondary"
+        >View All Tasks</a
+      >
+      {% else %}
+      <p>No upcoming tasks.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent reports -->
+    <div class="col-md-6">
+      <div class="section-header">
+        <h3>Recent Reports</h3>
+      </div>
+      {% if recent_reports %}
+      <ul class="list-group">
+        {% for report in recent_reports %}
+        <li class="list-group-item">
+          <a href="{% url 'soc:report_detail' report.pk %}"
+            >{{ report.title }}</a
+          >
+          <span class="badge bg-secondary"
+            >{{ report.get_report_type_display }}</span
+          >
+          <br />
+          <small class="text-muted"
+            >Created: {{ report.created_at|date:"M d, Y" }} by {{
+            report.author.get_full_name|default:report.author.username }}</small
+          >
+        </li>
+        {% endfor %}
+      </ul>
+      <a
+        href="{% url 'soc:report_list' %}"
+        class="btn btn-outline-secondary mt-3"
+        >View All Reports</a
+      >
+      {% else %}
+      <p>No recent reports.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Articles Section -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div
+        class="section-header d-flex justify-content-between align-items-center"
+      >
+        <h3>Recent Articles</h3>
+      </div>
+      {% if recent_articles %}
+      <div class="row">
+        {% for article in recent_articles %}
+        <div class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ article.title }}</h5>
+              <p class="card-text">
+                {{ article.content|striptags|truncatechars:120 }}
+              </p>
+              <a
+                href="{% url 'articles:read_article' article_id=article.id %}"
+                class="btn btn-sm btn-outline-primary"
+                >Read More</a
+              >
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="text-center mt-3">
+        <a
+          href="{% url 'articles:article_list' %}"
+          class="btn btn-outline-secondary"
+          >View All Articles</a
+        >
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        No articles have been published yet.
+        <a href="{% url 'articles:write_article' %}">Write the first one!</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="section-header mt-4">
+    <h3>Quick Actions</h3>
+  </div>
+  <div class="row">
+    <div class="col-md-3 mb-3">
+      <a href="{% url 'soc:incident_create' %}" class="btn btn-danger btn-block"
+        >Report New Incident</a
+      >
+    </div>
+    <div class="col-md-3 mb-3">
+      <a href="{% url 'soc:alert_create' %}" class="btn btn-info btn-block"
+        >Create Alert</a
+      >
+    </div>
+    <div class="col-md-3 mb-3">
+      <a href="{% url 'soc:task_create' %}" class="btn btn-success btn-block"
+        >Create Task</a
+      >
+    </div>
+    <div class="col-md-3 mb-3">
+      <a
+        href="{% url 'soc:metrics_dashboard' %}"
+        class="btn btn-primary btn-block"
+        >View Metrics</a
+      >
+    </div>
+  </div>
+
+  <!-- Security Training Section -->
+  <div class="section-header mt-4">
+    <h3>Security Training</h3>
+  </div>
+  <div class="row">
+    <div class="col-md-3 mb-3">
+      <a
+        href="{% url 'courses:create_course_start' %}"
+        class="btn btn-outline-primary btn-block"
+        >Create Course</a
+      >
+    </div>
+    <div class="col-md-3 mb-3">
+      <a
+        href="{% url 'courses:course_list' %}"
+        class="btn btn-outline-info btn-block"
+        >Manage Courses</a
+      >
+    </div>
+    <div class="col-md-3 mb-3">
+      <a
+        href="{% url 'courses:enrollment_stats' %}"
+        class="btn btn-outline-success btn-block"
+        >Training Metrics</a
+      >
+    </div>
+    <div class="col-md-3 mb-3">
+      <a
+        href="{% url 'awareness:module_list' %}"
+        class="btn btn-outline-warning btn-block"
+        >Awareness Modules</a
+      >
+    </div>
+  </div>
+</div>
+{% endblock %}

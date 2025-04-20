@@ -1,0 +1,62 @@
+<!-- filepath: /home/lee/Documents/Sage/src/Cybersec/NonSoc/static/nonsoc/css/notifications.css -->
+.notification-list {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.notification-item {
+  transition: background-color 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.notification-item.unread {
+  background-color: rgba(13, 110, 253, 0.05);
+  border-left: 4px solid #0d6efd;
+}
+
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-icon i {
+  font-size: 1.2rem;
+}
+
+.notification-content {
+  flex-grow: 1;
+  overflow-wrap: break-word;
+  max-width: calc(100% - 80px);
+}
+
+.mark-read-btn {
+  color: #6c757d;
+  padding: 0.25rem 0.5rem;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.mark-read-btn:hover {
+  opacity: 1;
+  color: #dc3545;
+}
+
+.notification-item:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+@media (max-width: 768px) {
+  .notification-content {
+    max-width: calc(100% - 60px);
+  }
+  
+  .mark-read-btn {
+    padding: 0.15rem 0.3rem;
+  }
+}

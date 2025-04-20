@@ -1,0 +1,139 @@
+{% extends "base.html" %} {% load static %} {% block title %}Available Courses{% endblock %} {% block extra_css %}
+<style>
+  .course-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    height: 100%;
+  }
+  .course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  .course-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+  .card-badge-area {
+    background-color: rgba(248, 249, 250, 0.7);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  .course-enrolled {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 0.8rem;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Available Courses</h1>
+    {% if is_soc_user %}
+    <a href="{% url 'courses:create_course_start' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create New Course
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <form method="get" action="{% url 'courses:course_list' %}" class="d-flex mb-3">
+        <div class="input-group">
+          <input
+            type="text"
+            name="search"
+            class="form-control"
+            placeholder="Search courses..."
+            value="{{ request.GET.search|default:'' }}"
+          />
+          <button class="btn btn-primary" type="submit">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="col-md-6">
+      <div class="d-flex justify-content-md-end">
+        <div class="btn-group me-2">
+          <a
+            href="{% url 'courses:course_list' %}"
+            class="btn {% if not request.GET.type %}btn-primary{% else %}btn-outline-primary{% endif %}"
+            >All</a
+          >
+          <a
+            href="{% url 'courses:course_list' %}?type=awareness"
+            class="btn {% if request.GET.type == 'awareness' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+            >Awareness</a
+          >
+          {% if is_soc_user %}
+          <a
+            href="{% url 'courses:course_list' %}?type=advanced"
+            class="btn {% if request.GET.type == 'advanced' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+            >Advanced</a
+          >
+          {% endif %}
+        </div>
+        <a
+          href="{% url 'courses:course_list' %}?enrolled=true"
+          class="btn btn-success"
+        >
+          My Courses
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for course in courses %}
+    <div class="col">
+      <div class="card course-card h-100 position-relative">
+        <!-- Move badge to dedicated area above card body -->
+        <div class="card-badge-area p-2 text-end">
+          {% if course.course_type == 'advanced' %}
+          <span class="badge bg-danger">Advanced</span>
+          {% else %}
+          <span class="badge bg-info">Awareness</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">{{ course.title }}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            {{ course.modules.count }} modules
+          </h6>
+          <p class="card-text">{{ course.description|truncatechars:150 }}</p>
+        </div>
+        <div class="card-footer">
+          <div class="row align-items-center">
+            <div class="col">
+              <a
+                href="{% url 'courses:course_detail' course_id=course.id %}"
+                class="btn btn-sm btn-primary"
+                >View Details</a
+              >
+            </div>
+            <div class="col text-end">
+              <small class="text-muted me-2"
+                >Created at: {{ course.created_at|date:"M d, Y" }}</small
+              >
+              {% if course.is_enrolled %}
+              <span class="badge bg-success">✓ Enrolled</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info">
+        No courses found. {% if is_soc_user %}
+        <a href="{% url 'courses:create_course_start' %}"
+          >Create a new course</a
+        >
+        to get started. {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

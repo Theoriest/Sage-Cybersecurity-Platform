@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Delete Question - {{ question.module.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_list' %}">Awareness Modules</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:module_detail' module_id=question.module.id %}">{{ question.module.title }}</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'awareness:manage_questions' module_id=question.module.id %}">Manage Questions</a>
+      </li>
+      <li class="breadcrumb-item active">Delete Question</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header bg-danger text-white">
+          <h2 class="mb-0">Delete Question</h2>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Are you sure?</h5>
+            <p>You are about to delete the following question:</p>
+            <blockquote class="blockquote">
+              {{ question.text }}
+            </blockquote>
+            <p class="mb-0">This action cannot be undone.</p>
+          </div>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between mt-4">
+              <a href="{% url 'awareness:manage_questions' module_id=question.module.id %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i> Delete Question
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

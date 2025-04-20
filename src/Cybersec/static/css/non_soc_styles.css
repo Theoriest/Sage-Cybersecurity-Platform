@@ -1,0 +1,115 @@
+/* Non-SOC App Styles */
+
+/* Navbar Styles */
+.navbar {
+  background-color: #333;
+  padding: 0.8rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-nav {
+  margin-left: auto; /* Push nav items to the right */
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.nav-link {
+  color: #ddd;
+  margin: 0 10px;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.active .nav-link {
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Button Styling */
+.btn-outline-light {
+  border-color: #ddd;
+  color: #ddd;
+}
+
+.btn-outline-light:hover {
+  background-color: #444;
+  color: #fff;
+}
+
+/* Profile Form Styling */
+.profile-form {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.profile-form h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-control {
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.submit-btn {
+  background-color: #007bff;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 4px;
+  color: white;
+  font-weight: 500;
+  transition: background-color 0.3s;
+  margin-top: 1rem;
+}
+
+.submit-btn:hover {
+  background-color: #0069d9;
+}
+
+.alert {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 4px;
+}
+
+.alert-success {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
