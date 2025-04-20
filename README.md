@@ -34,16 +34,30 @@ Sage is designed to improve an organization's security posture by ensuring all e
 7. Create superuser: `python manage.py createsuperuser`
 8. Run development server: `python manage.py runserver`
 
-## Environment Variables
+## Environment Variables and Settings
 
-Create a `.env` file in the project root with the following variables:
-```
-SECRET_KEY=your_django_secret_key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_URL=postgresql://user:password@localhost/dbname
-HUGGINGFACE_API_KEY=your_huggingface_api_key
-```
+For security reasons, sensitive settings are not included in the repository. Follow these steps to set up your environment:
+
+1. Copy the settings template to create your local settings:
+   ```
+   cp src/Cybersec/Cybersec/settings_template.py src/Cybersec/Cybersec/settings.py
+   ```
+
+2. Create a `.env` file in the project root with your secret values:
+   ```
+   cp .env.example .env
+   ```
+
+3. Edit the `.env` file and add your actual secrets:
+   ```
+   DJANGO_SECRET_KEY=your_django_secret_key_here
+   DEBUG=True
+   ALLOWED_HOSTS=localhost,127.0.0.1
+   DATABASE_URL=postgresql://user:password@localhost/dbname
+   HUGGINGFACE_API_KEY=your_huggingface_api_key_here
+   ```
+
+The application will load these environment variables automatically when it starts.
 
 ## Documentation
 

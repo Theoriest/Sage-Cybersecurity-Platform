@@ -55,9 +55,11 @@ temp/
 
 # Django settings with secrets
 src/Cybersec/Cybersec/settings.py
+src/Cybersec/Cybersec/settings_*.py
 **/settings_local.py
 **/.env.local
 **/secrets.json
+**/*_key*.py
 
 # Logs
 logs/
