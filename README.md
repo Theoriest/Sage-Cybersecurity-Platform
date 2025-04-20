@@ -52,3 +52,34 @@ More detailed documentation can be found in the [docs directory](/docs/project_d
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Troubleshooting Git Issues
+
+If you encounter Git push errors like "non-fast-forward", follow these steps:
+
+1. First, fetch the latest changes from the remote:
+   ```
+   git fetch origin
+   ```
+
+2. If you want to keep both your changes and the remote changes, use:
+   ```
+   git pull --rebase origin main
+   ```
+
+3. If you encounter conflicts during rebase, resolve them and then:
+   ```
+   git add .
+   git rebase --continue
+   ```
+
+4. After successfully rebasing, push to GitHub with:
+   ```
+   git push origin main
+   ```
+
+5. If you want to force push (only if you're sure about overwriting remote changes):
+   ```
+   git push -f origin main
+   ```
+   Note: Use force push with caution as it can overwrite others' work.
