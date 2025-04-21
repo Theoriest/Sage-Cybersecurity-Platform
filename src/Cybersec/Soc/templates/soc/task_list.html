@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SOC Tasks{% endblock %}
+
+{% block extra_css %}
+<style>
+  .task-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .task-stats {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+  }
+  
+  .stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex: 1;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  .priority-badge {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .tasks-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  
+  .tasks-table td {
+    vertical-align: middle;
+  }
+  
+  .priority-critical, .priority-high {
+    background-color: #dc3545;
+  }
+  
+  .priority-medium {
+    background-color: #ffc107;
+  }
+  
+  .priority-low, .priority-normal {
+    background-color: #28a745;
+  }
+  
+  .status-indicator {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .status-in-progress {
+    background-color: #ffc107;
+  }
+  
+  .status-open, .status-new {
+    background-color: #0d6efd;
+  }
+  
+  .status-completed {
+    background-color: #28a745;
+  }
+  
+  .status-blocked {
+    background-color: #dc3545;
+  }
+  
+  .table-action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    margin-right: 5px;
+  }
+  
+  .due-date {
+    white-space: nowrap;
+  }
+  
+  .due-date.overdue {
+    color: #dc3545;
+    font-weight: 500;
+  }
+  
+  .due-date.today {
+    color: #fd7e14;
+    font-weight: 500;
+  }
+  
+  .due-date.upcoming {
+    color: #0d6efd;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'soc:dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Tasks</li>
+    </ol>
+  </nav>
+  
+  <div class="task-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="mb-0">SOC Tasks</h1>
+      <div>
+        <a href="{% url 'soc:task_create' %}" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Create Task
+        </a>
+        <button class="btn btn-outline-secondary ms-2" id="toggleFiltersBtn">
+          <i class="fas fa-filter me-2"></i>Filters
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filter section -->
+  <div class="filter-section mb-4" id="filterSection" style="display: none;">
+    <form method="GET" class="row g-3">
+      <div class="col-md-4">
+        <label for="statusFilter" class="form-label">Status</label>
+        <select name="status" id="statusFilter" class="form-select">
+          <option value="">All Statuses</option>
+          {% for key, value in status_choices.items %}
+          <option value="{{ key }}" {% if current_filters.status == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-4">
+        <label for="priorityFilter" class="form-label">Priority</label>
+        <select name="priority" id="priorityFilter" class="form-select">
+          <option value="">All Priorities</option>
+          {% for key, value in priority_choices.items %}
+          <option value="{{ key }}" {% if current_filters.priority == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-4">
+        <label for="assignedFilter" class="form-label">Assigned To</label>
+        <select name="assigned_to" id="assignedFilter" class="form-select">
+          <option value="">All Assignments</option>
+          <option value="me" {% if current_filters.assigned_to == 'me' %}selected{% endif %}>Assigned to me</option>
+          <option value="unassigned" {% if current_filters.assigned_to == 'unassigned' %}selected{% endif %}>Unassigned</option>
+        </select>
+      </div>
+      
+      <div class="col-12 d-flex justify-content-end">
+        <a href="{% url 'soc:task_list' %}" class="btn btn-outline-secondary me-2">Clear Filters</a>
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Task statistics -->
+  <div class="task-stats">
+    <div class="stat-card">
+      <div class="stat-value text-primary">{{ task_stats.total|default:"0" }}</div>
+      <div class="stat-label">Total Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-warning">{{ task_stats.in_progress|default:"0" }}</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-danger">{{ task_stats.overdue|default:"0" }}</div>
+      <div class="stat-label">Overdue</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-success">{{ task_stats.completed|default:"0" }}</div>
+      <div class="stat-label">Completed</div>
+    </div>
+  </div>
+  
+  <!-- Tasks table -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover tasks-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Due Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in tasks %}
+            <tr>
+              <td>
+                <a href="{% url 'soc:task_detail' pk=task.pk %}" class="fw-bold text-decoration-none">
+                  {{ task.title }}
+                </a>
+              </td>
+              <td>
+                <span class="priority-badge priority-{{ task.priority }}"></span>
+                {{ task.get_priority_display }}
+              </td>
+              <td>
+                <span class="status-indicator status-{{ task.status }}"></span>
+                {{ task.get_status_display }}
+              </td>
+              <td>
+                {% if task.assigned_to %}
+                {{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}
+                {% else %}
+                <span class="text-muted">Unassigned</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if task.due_date %}
+                <span class="due-date 
+                  {% if task.due_date|date:'Y-m-d' < now|date:'Y-m-d' %}
+                    overdue
+                  {% elif task.due_date|date:'Y-m-d' == now|date:'Y-m-d' %}
+                    today
+                  {% else %}
+                    upcoming
+                  {% endif %}">
+                  {{ task.due_date|date:"M d, Y" }}
+                </span>
+                {% else %}
+                <span class="text-muted">No due date</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group">
+                  <a href="{% url 'soc:task_detail' pk=task.pk %}" class="btn btn-primary btn-sm table-action-btn" title="View">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'soc:task_update' pk=task.pk %}" class="btn btn-info btn-sm table-action-btn" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-4">
+                <p class="text-muted mb-0">No tasks found matching your criteria.</p>
+                <a href="{% url 'soc:task_create' %}" class="btn btn-primary btn-sm mt-2">Create a Task</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      {% if tasks.has_other_pages %}
+      <nav aria-label="Task pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if tasks.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ tasks.previous_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned_to %}&assigned_to={{ current_filters.assigned_to }}{% endif %}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&laquo;</span>
+          </li>
+          {% endif %}
+          
+          {% for i in tasks.paginator.page_range %}
+            {% if tasks.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned_to %}&assigned_to={{ current_filters.assigned_to }}{% endif %}">{{ i }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if tasks.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ tasks.next_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.assigned_to %}&assigned_to={{ current_filters.assigned_to }}{% endif %}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&raquo;</span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle filter section
+    const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+    const filterSection = document.getElementById('filterSection');
+    
+    toggleFiltersBtn.addEventListener('click', function() {
+      if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+      } else {
+        filterSection.style.display = 'none';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-filter me-2"></i>Filters';
+      }
+    });
+    
+    // Show filters if any are active
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('status') || urlParams.has('priority') || urlParams.has('assigned_to')) {
+      filterSection.style.display = 'block';
+      toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+    }
+  });
+</script>
+{% endblock %}

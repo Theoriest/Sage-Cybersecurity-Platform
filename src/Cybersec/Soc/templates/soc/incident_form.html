@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .incident-form-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .severity-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 10px;
+  }
+  
+  .severity-critical {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .severity-high {
+    background-color: #fd7e14;
+    color: white;
+  }
+  
+  .severity-medium {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .severity-low {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .severity-info {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  .field-header {
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .field-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+  }
+  
+  .incident-section {
+    border-left: 4px solid #dc3545;
+  }
+  
+  .affected-systems-tag {
+    display: inline-block;
+    background-color: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+  }
+  
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-9 mx-auto">
+      <div class="incident-form-header">
+        <h1 class="mb-2">{{ title }}</h1>
+        <p class="lead text-muted mb-0">Document security incidents for tracking, investigation, and resolution</p>
+      </div>
+      
+      {% if alert %}
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> This incident is being created from Alert #{{ alert.id }} - {{ alert.title }}
+      </div>
+      {% endif %}
+      
+      <form method="post">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="card incident-section mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Incident Information</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.title.id_for_label }}" class="form-label field-header">Incident Title</label>
+              <div class="field-description">Provide a clear, concise title that summarizes the incident</div>
+              {{ form.title }}
+              {% if form.title.errors %}
+                <div class="text-danger">{{ form.title.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.description.id_for_label }}" class="form-label field-header">Brief Description</label>
+              <div class="field-description">Short summary of what occurred (1-2 sentences)</div>
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="text-danger">{{ form.description.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Detailed Information -->
+        <div class="card incident-section mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Detailed Information</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.details.id_for_label }}" class="form-label field-header">Incident Details</label>
+              <div class="field-description">Comprehensive description of the incident including timeline of events, detection method, and initial findings</div>
+              {{ form.details }}
+              {% if form.details.errors %}
+                <div class="text-danger">{{ form.details.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.affected_systems.id_for_label }}" class="form-label field-header">Affected Systems</label>
+              <div class="field-description">List all systems, applications, or services affected by this incident</div>
+              {{ form.affected_systems }}
+              {% if form.affected_systems.errors %}
+                <div class="text-danger">{{ form.affected_systems.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Classification -->
+        <div class="card incident-section mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Classification</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.severity.id_for_label }}" class="form-label field-header">Severity</label>
+                <div class="field-description">How serious is this incident?</div>
+                {{ form.severity }}
+                {% if form.severity.errors %}
+                  <div class="text-danger">{{ form.severity.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.status.id_for_label }}" class="form-label field-header">Status</label>
+                <div class="field-description">Current status of this incident</div>
+                {{ form.status }}
+                {% if form.status.errors %}
+                  <div class="text-danger">{{ form.status.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Assignment -->
+        <div class="card incident-section mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Assignment</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.assigned_to.id_for_label }}" class="form-label field-header">Assign To</label>
+              <div class="field-description">Who should lead the investigation and response for this incident?</div>
+              {{ form.assigned_to }}
+              {% if form.assigned_to.errors %}
+                <div class="text-danger">{{ form.assigned_to.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Resolution Information -->
+        <div class="card incident-section mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Resolution</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.remediation_steps.id_for_label }}" class="form-label field-header">Remediation Steps</label>
+              <div class="field-description">Document steps taken or planned to address the incident</div>
+              {{ form.remediation_steps }}
+              {% if form.remediation_steps.errors %}
+                <div class="text-danger">{{ form.remediation_steps.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.resolution_summary.id_for_label }}" class="form-label field-header">Resolution Summary</label>
+              <div class="field-description">Summarize how the incident was resolved and any lessons learned (complete when incident is closed)</div>
+              {{ form.resolution_summary }}
+              {% if form.resolution_summary.errors %}
+                <div class="text-danger">{{ form.resolution_summary.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4 mb-5">
+          {% if alert %}
+          <a href="{% url 'soc:alert_detail' pk=alert.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Alert
+          </a>
+          {% elif incident %}
+          <a href="{% url 'soc:incident_detail' pk=incident.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Incident
+          </a>
+          {% else %}
+          <a href="{% url 'soc:incident_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-2"></i> Cancel
+          </a>
+          {% endif %}
+          
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-save me-2"></i> {% if incident %}Update Incident{% else %}Report Incident{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add severity styling to the select element
+    const severitySelect = document.getElementById('{{ form.severity.id_for_label }}');
+    if (severitySelect) {
+      function updateSeveritySelect() {
+        const value = severitySelect.value;
+        // Remove existing classes
+        severitySelect.classList.remove('bg-danger', 'bg-warning', 'bg-info', 'bg-success', 'text-white', 'text-dark');
+        
+        // Add appropriate classes
+        if (value === 'critical') {
+          severitySelect.classList.add('bg-danger', 'text-white');
+        } else if (value === 'high') {
+          severitySelect.classList.add('bg-warning', 'text-dark');
+        } else if (value === 'medium') {
+          severitySelect.classList.add('bg-info', 'text-white');
+        } else if (value === 'low') {
+          severitySelect.classList.add('bg-success', 'text-white');
+        }
+      }
+      
+      severitySelect.addEventListener('change', updateSeveritySelect);
+      updateSeveritySelect(); // Initialize
+    }
+  });
+</script>
+{% endblock %}
+{% endblock %}

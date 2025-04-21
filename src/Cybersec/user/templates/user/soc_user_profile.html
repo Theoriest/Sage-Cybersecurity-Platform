@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile - {{ user.username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'user/css/profile.css' %}">
+<style>
+  .profile-header {
+    background-color: #343a40;
+    color: white;
+    padding: 30px 0;
+    margin-bottom: 30px;
+    border-radius: 8px;
+  }
+  
+  .profile-sidebar {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  
+  .profile-picture {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+    margin-bottom: 15px;
+  }
+  
+  .profile-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+  }
+  
+  .stat-item {
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #6c757d;
+  }
+  
+  .profile-actions {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .profile-actions .btn {
+    margin-bottom: 10px;
+  }
+  
+  .section-title {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem 1.25rem;
+    font-weight: 500;
+  }
+  
+  /* Activity list */
+  .activity-list .list-group-item {
+    padding: 1rem;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: #3498db;
+    flex-shrink: 0;
+  }
+  
+  .activity-content {
+    flex-grow: 1;
+  }
+  
+  /* Profile picture preview */
+  .profile-picture-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+  }
+  
+  /* Enhanced role and department badges */
+  .role-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    background-color: #3A506B;  /* Improved color for better readability */
+    color: white;              /* White text for better contrast */
+  }
+  
+  .department-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    background-color: #1C3144;  /* Improved color for better readability */
+    color: white;              /* White text for better contrast */
+  }
+  
+  /* Stats cards */
+  .stats-card {
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px; /* Fixed syntax error: removed the period */
+  }
+  
+  .security-requests-table th,
+  .security-requests-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+  }
+  
+  .security-requests-table .badge {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.65rem;
+  }
+  
+  .security-requests-table .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <!-- Profile sidebar -->
+    <div class="col-lg-4">
+      <div class="profile-sidebar">
+        <div class="text-center">
+          {% if user.soc_profile.profile_picture %}
+          <img src="{{ user.soc_profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+          {% else %}
+          <img src="{% static 'user/images/default_profile.png' %}" alt="Default Profile Picture" class="profile-picture">
+          {% endif %}
+          
+          <h3 class="mt-3">{{ user.get_full_name }}</h3>
+          <p class="text-muted">@{{ user.username }}</p>
+          
+          <!-- Role and Department Badges with Improved Readability -->
+          <div class="role-badge">
+            <i class="fas fa-user-shield me-2"></i>{{ user.soc_profile.get_role_display }}
+          </div>
+          <div class="department-badge">
+            <i class="fas fa-building me-2"></i>{{ user.soc_profile.department }}
+          </div>
+        </div>
+
+        <div class="profile-stats">
+          <div class="stat-item">
+            <div class="stat-value">{{ user.soc_profile.incidents_handled|default:"0" }}</div>
+            <div class="stat-label">Incidents</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ user.soc_profile.alerts_processed|default:"0" }}</div>
+            <div class="stat-label">Alerts</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ user.soc_profile.reports_created|default:"0" }}</div>
+            <div class="stat-label">Reports</div>
+          </div>
+        </div>
+
+        <div class="profile-actions mt-3">
+          <button class="btn btn-primary btn-block" id="editProfileBtn">
+            <i class="fas fa-edit me-2"></i>Edit Profile
+          </button>
+          <button class="btn btn-outline-secondary btn-block mt-2" id="changePasswordBtn">
+            <i class="fas fa-key me-2"></i>Change Password
+          </button>
+        </div>
+        
+        <!-- User details -->
+        <div class="mt-4">
+          <h6 class="mb-3">Contact Information</h6>
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <i class="fas fa-envelope me-2 text-muted"></i>{{ user.email }}
+            </li>
+            {% if user.soc_profile.phone_number %}
+            <li class="mb-2">
+              <i class="fas fa-phone me-2 text-muted"></i>{{ user.soc_profile.phone_number }}
+            </li>
+            {% endif %}
+            {% if user.soc_profile.unique_identifier %}
+            <li class="mb-2">
+              <i class="fas fa-id-badge me-2 text-muted"></i>ID: {{ user.soc_profile.unique_identifier }}
+            </li>
+            {% endif %}
+            {% if user.last_login %}
+            <li class="mb-2">
+              <i class="fas fa-sign-in-alt me-2 text-muted"></i>Last login: {{ user.last_login|date:"M d, Y H:i" }}
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile content -->
+    <div class="col-lg-8">
+      <!-- Profile edit form -->
+      <div class="card mb-4" id="profileEditCard" style="display: none;">
+        <div class="card-header">
+          <h5 class="mb-0">Edit Profile</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" enctype="multipart/form-data" id="profileForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile" />
+            
+            <div class="mb-3">
+              <label for="{{ profile_form.username.id_for_label }}" class="form-label">Username</label>
+              {{ profile_form.username }}
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="{{ profile_form.first_name.id_for_label }}" class="form-label">First Name</label>
+                {{ profile_form.first_name }}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ profile_form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                {{ profile_form.last_name }}
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ profile_form.email.id_for_label }}" class="form-label">Email</label>
+              {{ profile_form.email }}
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Profile Picture</label>
+              <input type="file" name="soc_profile.profile_picture" class="form-control" accept="image/*">
+              <small class="text-muted">Maximum file size: 2MB. Recommended dimensions: 300x300px.</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ profile_form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
+              {{ profile_form.phone_number }}
+            </div>
+            
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-outline-secondary me-2" id="cancelEditBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Update Profile</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Password change form -->
+      <div class="card mb-4" id="passwordChangeCard" style="display: none;">
+        <div class="card-header">
+          <h5 class="mb-0">Change Password</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" id="passwordForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password" />
+            
+            <div class="mb-3">
+              <label for="{{ password_form.old_password.id_for_label }}" class="form-label">Current Password</label>
+              {{ password_form.old_password }} 
+              {% if password_form.old_password.errors %}
+              <div class="invalid-feedback d-block">
+                {{ password_form.old_password.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ password_form.new_password1.id_for_label }}" class="form-label">New Password</label>
+              {{ password_form.new_password1 }} 
+              {% if password_form.new_password1.errors %}
+              <div class="invalid-feedback d-block">
+                {{ password_form.new_password1.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ password_form.new_password2.id_for_label }}" class="form-label">Confirm New Password</label>
+              {{ password_form.new_password2 }} 
+              {% if password_form.new_password2.errors %}
+              <div class="invalid-feedback d-block">
+                {{ password_form.new_password2.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+            
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-outline-secondary me-2" id="cancelPasswordBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Update Password</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Recent activity -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Recent Activity</h5>
+        </div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush activity-list">
+            {% if user.activities.exists %} 
+              {% for activity in user.activities.all|slice:":5" %}
+              <li class="list-group-item">
+                <div class="d-flex">
+                  <div class="activity-icon">
+                    {% if activity.activity_type == 'incident_update' %}
+                    <i class="fas fa-shield-alt"></i>
+                    {% elif activity.activity_type == 'alert_processing' %}
+                    <i class="fas fa-bell"></i>
+                    {% elif activity.activity_type == 'report_creation' %}
+                    <i class="fas fa-file-alt"></i>
+                    {% elif activity.activity_type == 'login' %}
+                    <i class="fas fa-sign-in-alt"></i>
+                    {% else %}
+                    <i class="fas fa-info-circle"></i>
+                    {% endif %}
+                  </div>
+                  <div class="activity-content">
+                    <p class="mb-0">{{ activity.description }}</p>
+                    <small class="text-muted">{{ activity.timestamp|date:"M d, Y H:i" }}</small>
+                  </div>
+                </div>
+              </li>
+              {% endfor %} 
+            {% else %}
+              <li class="list-group-item text-center py-4">
+                <p class="text-muted mb-0">No recent activity recorded</p>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Link to security requests page -->
+      <div class="text-end mt-3">
+        <a href="{% url 'soc:security_request_list' %}" class="btn btn-primary">
+          <i class="fas fa-shield-alt me-2"></i>View Security Requests
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const profileForm = document.getElementById('profileEditCard');
+    const passwordForm = document.getElementById('passwordChangeCard');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+    
+    editProfileBtn.addEventListener('click', function() {
+      profileForm.style.display = 'block';
+      passwordForm.style.display = 'none';
+    });
+    
+    changePasswordBtn.addEventListener('click', function() {
+      passwordForm.style.display = 'block';
+      profileForm.style.display = 'none';
+    });
+    
+    cancelEditBtn.addEventListener('click', function() {
+      profileForm.style.display = 'none';
+    });
+    
+    cancelPasswordBtn.addEventListener('click', function() {
+      passwordForm.style.display = 'none';
+    });
+    
+    // Profile picture preview
+    const profilePictureInput = document.querySelector('input[type="file"]');
+    if (profilePictureInput) {
+      profilePictureInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            let preview = document.querySelector('.profile-picture-preview');
+            if (!preview) {
+              preview = document.createElement('img');
+              preview.classList.add('profile-picture-preview');
+              preview.classList.add('mb-2');
+              profilePictureInput.parentNode.insertBefore(preview, profilePictureInput);
+            }
+            preview.src = e.target.result;
+          }
+          reader.readAsDataURL(this.files[0]);
+        }
+      });
+    }
+    
+    // Show profile form if it was updated
+    {% if profile_updated %}
+    profileForm.style.display = 'none';
+    {% endif %}
+    
+    // Show password form if it had errors
+    {% if password_form.errors %}
+    passwordForm.style.display = 'block';
+    {% endif %}
+  });
+</script>
+{% endblock %}

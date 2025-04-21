@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
-from datetime import timedelta
+from django.core.paginator import Paginator
 from django.http import HttpResponse
+from django.template.defaultfilters import register
+from datetime import timedelta
 
 from .models import (
     SecurityIncident,
@@ -41,6 +43,19 @@ def soc_required(view_func):
             return redirect('login')
         return view_func(request, *args, **kwargs)
     return wrapped
+
+@register.filter
+def split_affected_systems(value):
+    """Split affected systems by line breaks and commas"""
+    if not value:
+        return []
+    
+    systems = []
+    lines = value.split('\n')
+    for line in lines:
+        items = [item.strip() for item in line.split(',')]
+        systems.extend([item for item in items if item])
+    return systems
 
 @login_required
 @soc_required
@@ -149,7 +164,7 @@ def add_incident_response(request, pk=None, incident_id=None):
 @soc_required
 def incident_list(request):
     """View for listing all security incidents"""
-    # Filter parameters
+    # Get filter parameters
     status = request.GET.get('status')
     severity = request.GET.get('severity')
     assigned_to = request.GET.get('assigned_to')
@@ -169,10 +184,25 @@ def incident_list(request):
         else:
             incidents = incidents.filter(assigned_to__id=assigned_to)
     
+    # Calculate incident statistics
+    incident_stats = {
+        'critical': SecurityIncident.objects.filter(severity='critical').count(),
+        'in_progress': SecurityIncident.objects.filter(status='in_progress').count(),
+        'new': SecurityIncident.objects.filter(status='open').count(),
+        'resolved': SecurityIncident.objects.filter(status__in=['resolved', 'closed']).count(),
+    }
+    
+    # Order by latest first
     incidents = incidents.order_by('-created_at')
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(incidents, 15)  # Show 15 incidents per page
+    incidents = paginator.get_page(page)
     
     context = {
         'incidents': incidents,
+        'incident_stats': incident_stats,
         'status_choices': dict(SecurityIncident._meta.get_field('status').choices),
         'severity_choices': dict(SecurityIncident._meta.get_field('severity').choices),
         'current_filters': {
@@ -239,9 +269,11 @@ def incident_update(request, pk):
 @soc_required
 def alert_list(request):
     """View for listing security alerts"""
+    # Get filter parameters
     status = request.GET.get('status')
     severity = request.GET.get('severity')
     false_positive = request.GET.get('false_positive')
+    search = request.GET.get('search')
     
     alerts = SecurityAlert.objects.all()
     
@@ -253,17 +285,38 @@ def alert_list(request):
     if false_positive:
         is_false_positive = false_positive == 'true'
         alerts = alerts.filter(false_positive=is_false_positive)
+    if search:
+        alerts = alerts.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
     
+    # Calculate alert stats
+    alert_stats = {
+        'critical': SecurityAlert.objects.filter(severity='critical').count(),
+        'high': SecurityAlert.objects.filter(severity='high').count(),
+        'medium': SecurityAlert.objects.filter(severity='medium').count(),
+        'low': SecurityAlert.objects.filter(severity='low').count(),
+    }
+    
+    # Order by latest first
     alerts = alerts.order_by('-created_at')
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(alerts, 15)  # 15 alerts per page
+    alerts = paginator.get_page(page)
     
     context = {
         'alerts': alerts,
+        'alert_stats': alert_stats,
         'status_choices': dict(SecurityAlert._meta.get_field('status').choices),
         'severity_choices': dict(SecurityAlert._meta.get_field('severity').choices),
         'current_filters': {
             'status': status,
             'severity': severity,
             'false_positive': false_positive,
+            'search': search,
         }
     }
     return render(request, 'soc/alert_list.html', context)
@@ -355,6 +408,7 @@ def alert_escalate(request, pk):
 @soc_required
 def task_list(request):
     """View for listing SOC tasks"""
+    # Get filter parameters
     status = request.GET.get('status')
     priority = request.GET.get('priority')
     assigned_to = request.GET.get('assigned_to')
@@ -374,11 +428,27 @@ def task_list(request):
         else:
             tasks = tasks.filter(assigned_to__id=assigned_to)
     
+    # Calculate task statistics
+    now = timezone.now().date()
+    task_stats = {
+        'total': SocTask.objects.count(),
+        'in_progress': SocTask.objects.filter(status='in_progress').count(),
+        'overdue': SocTask.objects.filter(due_date__lt=now).exclude(status='completed').count(),
+        'completed': SocTask.objects.filter(status='completed').count(),
+    }
+    
     # Default: sort by due date if available, then by priority
     tasks = tasks.order_by('due_date', '-priority', '-created_at')
     
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(tasks, 20)  # Show 20 tasks per page
+    tasks = paginator.get_page(page)
+    
     context = {
         'tasks': tasks,
+        'task_stats': task_stats,
+        'now': now,
         'status_choices': dict(SocTask._meta.get_field('status').choices),
         'priority_choices': dict(SocTask._meta.get_field('priority').choices),
         'current_filters': {
@@ -751,3 +821,164 @@ def metric_update(request, pk):
         'show_data_point_notes': True
     }
     return render(request, 'soc/metric_form.html', context)
+
+# Security Request views
+@login_required
+@soc_required
+def security_request_list(request):
+    """View for listing all security requests"""
+    # Get filter parameters
+    status = request.GET.get('status')
+    priority = request.GET.get('priority')
+    category = request.GET.get('category')
+    search = request.GET.get('search')
+    
+    # Start with all security requests
+    from NonSoc.models import SecurityRequest
+    security_requests = SecurityRequest.objects.all()
+    
+    # Apply filters
+    if status:
+        security_requests = security_requests.filter(status=status)
+    if priority:
+        security_requests = security_requests.filter(priority=priority)
+    if category:
+        security_requests = security_requests.filter(category=category)
+    if search:
+        security_requests = security_requests.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search) |
+            Q(requester__username__icontains=search) |
+            Q(requester__first_name__icontains=search) |
+            Q(requester__last_name__icontains=search)
+        )
+    
+    # Order by latest first
+    security_requests = security_requests.order_by('-created_at')
+    
+    # Calculate statistics for quick overview
+    request_stats = {
+        'total': SecurityRequest.objects.count(),
+        'open': SecurityRequest.objects.filter(status='new').count(),
+        'in_progress': SecurityRequest.objects.filter(status='in_progress').count(),
+        'resolved': SecurityRequest.objects.filter(status__in=['resolved', 'closed']).count(),
+    }
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(security_requests, 20)  # Show 20 requests per page
+    security_requests = paginator.get_page(page)
+    
+    context = {
+        'security_requests': security_requests,
+        'request_stats': request_stats,
+        'current_filters': {
+            'status': status,
+            'priority': priority,
+            'category': category,
+            'search': search,
+        }
+    }
+    return render(request, 'soc/security_request_list.html', context)
+
+@login_required
+@soc_required
+def security_request_detail(request, request_id):
+    """View for viewing a security request's details"""
+    from NonSoc.models import SecurityRequest
+    security_request = get_object_or_404(SecurityRequest, id=request_id)
+    
+    context = {
+        'security_request': security_request,
+    }
+    return render(request, 'soc/security_request_detail.html', context)
+
+@login_required
+@soc_required
+def mark_security_request_resolved(request, request_id):
+    """Mark a security request as resolved"""
+    from NonSoc.models import SecurityRequest
+    security_request = get_object_or_404(SecurityRequest, id=request_id)
+    security_request.status = 'resolved'
+    security_request.resolved_at = timezone.now()
+    security_request.save()
+    
+    # Create a notification for the requester
+    from NonSoc.models import UserNotification
+    UserNotification.objects.create(
+        user=security_request.requester,
+        title="Request Resolved",
+        message=f"Your security request '{security_request.title}' has been resolved.",
+        notification_type='request_update'
+    )
+    
+    messages.success(request, f"Security request #{request_id} has been marked as resolved.")
+    return redirect('soc:security_request_list')
+
+@login_required
+@soc_required
+def update_security_request_status(request, request_id):
+    """Update the status of a security request"""
+    from NonSoc.models import SecurityRequest
+    security_request = get_object_or_404(SecurityRequest, id=request_id)
+    
+    if request.method == 'POST':
+        status = request.POST.get('status')
+        if status in dict(SecurityRequest.STATUS_CHOICES).keys():
+            # If request is being moved to resolved status, set resolved timestamp
+            if status == 'resolved' and security_request.status != 'resolved':
+                security_request.resolved_at = timezone.now()
+                
+            security_request.status = status
+            security_request.save()
+            
+            # Create a notification for the requester
+            from NonSoc.models import UserNotification
+            UserNotification.objects.create(
+                user=security_request.requester,
+                title="Request Status Updated",
+                message=f"Your security request '{security_request.title}' has been updated to {security_request.get_status_display()}.",
+                notification_type='request_update'
+            )
+            
+            messages.success(request, f"Security request status updated to '{security_request.get_status_display()}'.")
+        else:
+            messages.error(request, "Invalid status value.")
+    
+    return redirect('soc:security_request_detail', request_id=security_request.id)
+
+@login_required
+@soc_required
+def add_security_request_response(request, request_id):
+    """Add a response to a security request"""
+    from NonSoc.models import SecurityRequest, SecurityRequestResponse
+    security_request = get_object_or_404(SecurityRequest, id=request_id)
+    
+    if request.method == 'POST':
+        message = request.POST.get('message', '').strip()
+        if message:
+            # Create the response
+            SecurityRequestResponse.objects.create(
+                security_request=security_request,
+                responder=request.user,
+                message=message
+            )
+            
+            # Update the request's last activity timestamp
+            security_request.updated_at = timezone.now()
+            security_request.save()
+            
+            # Create a notification for the requester
+            from NonSoc.models import UserNotification
+            UserNotification.objects.create(
+                user=security_request.requester,
+                title="New Response to Your Request",
+                message=f"Your security request '{security_request.title}' has received a new response.",
+                notification_type='request_response'
+            )
+            
+            messages.success(request, "Your response has been added successfully.")
+        else:
+            messages.error(request, "Response message cannot be empty.")
+    
+    return redirect('soc:security_request_detail', request_id=security_request.id)

@@ -1,32 +1,32 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
-User = settings.AUTH_USER_MODEL
+User = get_user_model()
 
 class UserNotification(models.Model):
     """Notifications for users"""
-    NOTIFICATION_TYPES = (
-        ('course', 'Course'),
-        ('security', 'Security'),
-        ('achievement', 'Achievement'),
-        ('awareness', 'Awareness Module'),
-        ('general', 'General'),
+    NOTIFICATION_TYPE_CHOICES = (
+        ('system', 'System'),
+        ('alert', 'Alert'),
+        ('request_update', 'Request Update'),
+        ('request_response', 'Request Response'),
     )
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     title = models.CharField(max_length=200)
     message = models.TextField()
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='general')
     is_read = models.BooleanField(default=False)
-    link = models.CharField(max_length=255, blank=True)
+    notification_type = models.CharField(
+        max_length=20, 
+        choices=NOTIFICATION_TYPE_CHOICES,
+        default='system'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.title} for {self.user.username}"
-    
-    class Meta:
-        ordering = ['-created_at']
+        return f"{self.title} - {self.user.username}"
 
 class ArticleRead(models.Model):
     """Track which articles users have read"""
@@ -64,11 +64,23 @@ class UserAchievement(models.Model):
     def __str__(self):
         return f"{self.title} - {self.user.username}"
 
+class SecurityAwareness(models.Model):
+    """Security awareness content for non-SOC users"""
+    title = models.CharField(max_length=200)
+    content = models.TextField(default='')
+    points = models.IntegerField(default=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+    users_completed = models.ManyToManyField(User, related_name='completed_awareness', blank=True)
+    
+    def __str__(self):
+        return self.title
+
 class SecurityRequest(models.Model):
     """Security requests submitted by non-SOC users"""
     STATUS_CHOICES = (
         ('new', 'New'),
         ('in_progress', 'In Progress'),
+        ('pending_info', 'Pending Info'),
         ('resolved', 'Resolved'),
         ('closed', 'Closed'),
     )
@@ -76,6 +88,14 @@ class SecurityRequest(models.Model):
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
+        ('critical', 'Critical'),
+    )
+    CATEGORY_CHOICES = (
+        ('access', 'Access Request'),
+        ('incident', 'Security Incident'),
+        ('vulnerability', 'Vulnerability Report'),
+        ('question', 'General Question'),
+        ('other', 'Other'),
     )
     
     title = models.CharField(max_length=200)
@@ -83,9 +103,21 @@ class SecurityRequest(models.Model):
     requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='security_requests')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='new')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return self.title
+
+class SecurityRequestResponse(models.Model):
+    """Responses to security requests from SOC team members"""
+    security_request = models.ForeignKey(SecurityRequest, on_delete=models.CASCADE, related_name='responses')
+    responder = models.ForeignKey(User, on_delete=models.CASCADE, related_name='request_responses')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Response to {self.security_request.title} by {self.responder.username}"
 

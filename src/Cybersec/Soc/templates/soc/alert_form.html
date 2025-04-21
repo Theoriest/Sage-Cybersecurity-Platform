@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .form-section {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #0d6efd;
+    background-color: #f8f9fa;
+  }
+  
+  .severity-critical {
+    border-color: #dc3545;
+  }
+  
+  .severity-high {
+    border-color: #fd7e14;
+  }
+  
+  .severity-medium {
+    border-color: #ffc107;
+  }
+  
+  .severity-low {
+    border-color: #28a745;
+  }
+  
+  .severity-info {
+    border-color: #17a2b8;
+  }
+  
+  .field-header {
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .submit-btn {
+    padding: 10px 30px;
+  }
+  
+  .field-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+  }
+  
+  .alert-source-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="form-header">
+        <h1 class="mb-2">{{ title }}</h1>
+        <p class="lead text-muted mb-0">Add details about the security alert for tracking and response</p>
+      </div>
+      
+      <form method="post">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Alert Information</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.title.id_for_label }}" class="form-label field-header">Alert Title</label>
+              <div class="field-description">Provide a clear, concise title that summarizes the alert</div>
+              {{ form.title }}
+              {% if form.title.errors %}
+                <div class="text-danger">{{ form.title.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.source.id_for_label }}" class="form-label field-header">Alert Source</label>
+              <div class="field-description">Where was this alert detected or reported from?</div>
+              {{ form.source }}
+              {% if form.source.errors %}
+                <div class="text-danger">{{ form.source.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.description.id_for_label }}" class="form-label field-header">Description</label>
+              <div class="field-description">Describe the alert in detail including relevant observations</div>
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="text-danger">{{ form.description.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Classification -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Classification</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.severity.id_for_label }}" class="form-label field-header">Severity</label>
+                <div class="field-description">How serious is this alert?</div>
+                {{ form.severity }}
+                {% if form.severity.errors %}
+                  <div class="text-danger">{{ form.severity.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.status.id_for_label }}" class="form-label field-header">Status</label>
+                <div class="field-description">Current status of this alert</div>
+                {{ form.status }}
+                {% if form.status.errors %}
+                  <div class="text-danger">{{ form.status.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Assignment -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Assignment & Related Items</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.assigned_to.id_for_label }}" class="form-label field-header">Assign To</label>
+              <div class="field-description">Who should investigate this alert?</div>
+              {{ form.assigned_to }}
+              {% if form.assigned_to.errors %}
+                <div class="text-danger">{{ form.assigned_to.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.related_incident.id_for_label }}" class="form-label field-header">Related Incident</label>
+              <div class="field-description">Is this alert related to an existing incident?</div>
+              {{ form.related_incident }}
+              {% if form.related_incident.errors %}
+                <div class="text-danger">{{ form.related_incident.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Additional Information -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Additional Information</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <div class="form-check">
+                {{ form.false_positive }}
+                <label for="{{ form.false_positive.id_for_label }}" class="form-check-label field-header">
+                  Mark as False Positive
+                </label>
+              </div>
+              <div class="field-description">Check if this alert has been determined to be a false positive</div>
+              {% if form.false_positive.errors %}
+                <div class="text-danger">{{ form.false_positive.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.notes.id_for_label }}" class="form-label field-header">Notes</label>
+              <div class="field-description">Additional notes about this alert, investigation steps, etc.</div>
+              {{ form.notes }}
+              {% if form.notes.errors %}
+                <div class="text-danger">{{ form.notes.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4 mb-5">
+          <a href="{% url 'soc:alert_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-2"></i> Cancel
+          </a>
+          <button type="submit" class="btn btn-primary submit-btn">
+            <i class="fas fa-save me-2"></i> {% if alert %}Update Alert{% else %}Save Alert{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add severity class to select element based on selected value
+    const severitySelect = document.getElementById('{{ form.severity.id_for_label }}');
+    if (severitySelect) {
+      function updateSeverityClass() {
+        const severityClasses = {
+          'critical': 'bg-danger text-white',
+          'high': 'bg-warning text-dark',
+          'medium': 'bg-info text-white',
+          'low': 'bg-success text-white',
+          'info': 'bg-secondary text-white'
+        };
+        
+        // Remove all possible classes
+        for (const cls of Object.values(severityClasses)) {
+          severitySelect.classList.remove(...cls.split(' '));
+        }
+        
+        // Add class for selected severity
+        const selectedSeverity = severitySelect.value;
+        if (severityClasses[selectedSeverity]) {
+          const classesToAdd = severityClasses[selectedSeverity].split(' ');
+          severitySelect.classList.add(...classesToAdd);
+        }
+      }
+      
+      severitySelect.addEventListener('change', updateSeverityClass);
+      
+      // Initialize on page load
+      updateSeverityClass();
+    }
+  });
+</script>
+{% endblock %}
+{% endblock %}

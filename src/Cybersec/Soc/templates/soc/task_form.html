@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .task-form-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .priority-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-left: 10px;
+  }
+  
+  .priority-critical {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .priority-high {
+    background-color: #fd7e14;
+    color: white;
+  }
+  
+  .priority-medium {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .priority-low {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .field-header {
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .field-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 10px;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .due-date-container {
+    position: relative;
+  }
+  
+  .calendar-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+  }
+  
+  .task-card {
+    border-left: 4px solid #0d6efd;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="task-form-header">
+        <h1 class="mb-2">{{ title }}</h1>
+        <p class="lead text-muted mb-0">Create a task to track security operations activities</p>
+      </div>
+      
+      <form method="post">
+        {% csrf_token %}
+        
+        <!-- Task Information -->
+        <div class="card task-card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Task Details</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.title.id_for_label }}" class="form-label field-header">Task Title</label>
+              <div class="field-description">Provide a clear, concise title for this task</div>
+              {{ form.title }}
+              {% if form.title.errors %}
+                <div class="text-danger">{{ form.title.errors }}</div>
+              {% endif %}
+            </div>
+            
+            <div class="mb-3">
+              <label for="{{ form.description.id_for_label }}" class="form-label field-header">Description</label>
+              <div class="field-description">Describe what needs to be done in detail</div>
+              {{ form.description }}
+              {% if form.description.errors %}
+                <div class="text-danger">{{ form.description.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Classification -->
+        <div class="card task-card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Priority & Status</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.priority.id_for_label }}" class="form-label field-header">Priority</label>
+                <div class="field-description">How urgent is this task?</div>
+                {{ form.priority }}
+                {% if form.priority.errors %}
+                  <div class="text-danger">{{ form.priority.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.status.id_for_label }}" class="form-label field-header">Status</label>
+                <div class="field-description">Current status of this task</div>
+                {{ form.status }}
+                {% if form.status.errors %}
+                  <div class="text-danger">{{ form.status.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Assignment -->
+        <div class="card task-card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Assignment</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.assigned_to.id_for_label }}" class="form-label field-header">Assign To</label>
+                <div class="field-description">Who should complete this task?</div>
+                {{ form.assigned_to }}
+                {% if form.assigned_to.errors %}
+                  <div class="text-danger">{{ form.assigned_to.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.due_date.id_for_label }}" class="form-label field-header">Due Date</label>
+                <div class="field-description">When should this task be completed by?</div>
+                <div class="due-date-container">
+                  {{ form.due_date }}
+                  <i class="fas fa-calendar-alt calendar-icon"></i>
+                </div>
+                {% if form.due_date.errors %}
+                  <div class="text-danger">{{ form.due_date.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Completion Information -->
+        {% if task %}
+        <div class="card task-card mb-4">
+          <div class="card-header">
+            <h4 class="mb-0">Completion Notes</h4>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="{{ form.completion_notes.id_for_label }}" class="form-label field-header">Completion Notes</label>
+              <div class="field-description">Notes about task completion, findings, or next steps</div>
+              {{ form.completion_notes }}
+              {% if form.completion_notes.errors %}
+                <div class="text-danger">{{ form.completion_notes.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        
+        <div class="d-flex justify-content-between mt-4 mb-5">
+          <a href="{% url 'soc:task_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-2"></i> Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> {% if task %}Save Task{% else %}Create Task{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Highlight the selected priority option with appropriate colors
+    const prioritySelect = document.getElementById('{{ form.priority.id_for_label }}');
+    if (prioritySelect) {
+      prioritySelect.addEventListener('change', function() {
+        const priorityOptions = {
+          'critical': 'priority-critical',
+          'high': 'priority-high',
+          'medium': 'priority-medium',
+          'low': 'priority-low'
+        };
+        
+        // Remove existing classes
+        this.classList.remove('priority-critical', 'priority-high', 'priority-medium', 'priority-low');
+        
+        // Add class for selected priority
+        const selectedPriority = this.value;
+        if (priorityOptions[selectedPriority]) {
+          this.classList.add(priorityOptions[selectedPriority]);
+        }
+      });
+      
+      // Trigger change event to apply initial styling
+      prioritySelect.dispatchEvent(new Event('change'));
+    }
+  });
+</script>
+{% endblock %}
+{% endblock %}

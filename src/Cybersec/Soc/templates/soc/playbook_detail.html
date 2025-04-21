@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ playbook.title }} - Playbook{% endblock %}
+
+{% block extra_css %}
+<style>
+  .playbook-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .playbook-header {
+    padding: 25px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .playbook-content {
+    padding: 25px;
+  }
+  
+  .playbook-footer {
+    padding: 15px 25px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #eee;
+    border-radius: 0 0 8px 8px;
+  }
+  
+  .playbook-title {
+    margin-bottom: 5px;
+  }
+  
+  .playbook-meta {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  .playbook-sidebar {
+    position: sticky;
+    top: 20px;
+  }
+  
+  .sidebar-section {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .procedure-step {
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 3px solid #0d6efd;
+    position: relative;
+  }
+  
+  .prerequisites {
+    background-color: #f8f9fa;
+    border-left: 4px solid #fd7e14;
+    padding: 15px;
+    margin: 20px 0;
+  }
+  
+  .references {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 15px;
+    margin: 20px 0;
+  }
+  
+  .label {
+    font-weight: 600;
+  }
+  
+  .print-header,
+  .print-footer {
+    display: none;
+  }
+  
+  @media print {
+    .playbook-sidebar,
+    .breadcrumb,
+    .actions-row,
+    nav,
+    footer {
+      display: none !important;
+    }
+    
+    .playbook-container {
+      box-shadow: none;
+      border: none;
+    }
+    
+    .print-header,
+    .print-footer {
+      display: block;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .print-header img {
+      max-height: 60px;
+    }
+    
+    .print-footer {
+      font-size: 0.8rem;
+      color: #6c757d;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb" class="no-print">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'soc:dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'soc:playbook_list' %}">Playbooks</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ playbook.title }}</li>
+    </ol>
+  </nav>
+  
+  <div class="row actions-row mb-3">
+    <div class="col">
+      <div class="d-flex justify-content-between">
+        <h1>Playbook</h1>
+        <div>
+          <button onclick="window.print()" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-print"></i> Print
+          </button>
+          <a href="{% url 'soc:playbook_update' pk=playbook.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit Playbook
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-9">
+      <!-- Print Header (visible only when printing) -->
+      <div class="print-header">
+        <img src="{% static 'img/company-logo.png' %}" alt="Company Logo">
+        <h2>Incident Response Playbook</h2>
+      </div>
+      
+      <div class="playbook-container">
+        <div class="playbook-header">
+          <h2 class="playbook-title">{{ playbook.title }}</h2>
+          <div class="playbook-meta">
+            <span class="badge bg-secondary">{{ playbook.get_category_display }}</span>
+            <span class="ms-2">
+              <i class="fas fa-user me-1"></i> {{ playbook.created_by.get_full_name|default:playbook.created_by.username }}
+            </span>
+            <span class="ms-2">
+              <i class="fas fa-calendar-alt me-1"></i> Last Updated: {{ playbook.updated_at|date:"F j, Y" }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="playbook-content">
+          <div class="mb-4">
+            <h4>Description</h4>
+            <p>{{ playbook.description }}</p>
+          </div>
+          
+          {% if playbook.prerequisites %}
+          <div class="prerequisites">
+            <h4>Prerequisites</h4>
+            <div>{{ playbook.prerequisites|safe }}</div>
+          </div>
+          {% endif %}
+          
+          <div class="mb-4">
+            <h4>Procedure</h4>
+            <div class="procedure">
+              {{ playbook.procedure|safe }}
+            </div>
+          </div>
+          
+          {% if playbook.references %}
+          <div class="references">
+            <h4>References</h4>
+            <div>{{ playbook.references|linebreaks }}</div>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="playbook-footer">
+          <small>Last updated: {{ playbook.updated_at|date:"F j, Y H:i" }}</small>
+        </div>
+      </div>
+      
+      <!-- Print Footer (visible only when printing) -->
+      <div class="print-footer">
+        <p>Confidential - For SOC Team Use - {{ playbook.updated_at|date:"F j, Y" }}</p>
+        <p>Generated by Sage Security Platform</p>
+      </div>
+    </div>
+    
+    <div class="col-lg-3">
+      <div class="playbook-sidebar">
+        <div class="sidebar-section">
+          <h5>Playbook Information</h5>
+          <hr>
+          <p><span class="label">Category:</span> {{ playbook.get_category_display }}</p>
+          <p><span class="label">Created:</span> {{ playbook.created_at|date:"M d, Y" }}</p>
+          <p><span class="label">Author:</span> {{ playbook.created_by.get_full_name }}</p>
+          {% if playbook.expected_duration %}
+          <p><span class="label">Expected Duration:</span> {{ playbook.expected_duration }} minutes</p>
+          {% endif %}
+          {% if playbook.associated_roles %}
+          <p><span class="label">Associated Roles:</span> {{ playbook.associated_roles }}</p>
+          {% endif %}
+        </div>
+        
+        <div class="sidebar-section">
+          <h5>Actions</h5>
+          <hr>
+          <div class="d-grid gap-2">
+            <a href="{% url 'soc:playbook_update' pk=playbook.pk %}" class="btn btn-primary">
+              <i class="fas fa-edit me-1"></i> Edit Playbook
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+              <i class="fas fa-print me-1"></i> Print Playbook
+            </button>
+            <a href="{% url 'soc:playbook_list' %}" class="btn btn-outline-secondary">
+              <i class="fas fa-list me-1"></i> All Playbooks
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -47,4 +47,11 @@ urlpatterns = [
     path('incident/create/', views.create_incident, name='create_incident'),
     path('incident/<int:incident_id>/', views.incident_detail, name='incident_detail'),
     path('incident/<int:incident_id>/respond/', views.add_incident_response, name='add_incident_response'),
+    
+    # Security requests
+    path('security-requests/', views.security_request_list, name='security_request_list'),
+    path('security-requests/<int:request_id>/', views.security_request_detail, name='security_request_detail'),
+    path('security-requests/<int:request_id>/resolve/', views.mark_security_request_resolved, name='mark_security_request_resolved'),
+    path('security-requests/<int:request_id>/update-status/', views.update_security_request_status, name='update_security_request_status'),
+    path('security-requests/<int:request_id>/respond/', views.add_security_request_response, name='add_security_request_response'),
 ]

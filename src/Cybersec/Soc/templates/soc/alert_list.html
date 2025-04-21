@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Security Alerts{% endblock %}
+
+{% block extra_css %}
+<style>
+  .alert-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .alert-stats {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+  }
+  
+  .stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex: 1;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  .severity-badge {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .alerts-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  
+  .alerts-table td {
+    vertical-align: middle;
+  }
+  
+  .severity-critical {
+    background-color: #dc3545;
+  }
+  
+  .severity-high {
+    background-color: #fd7e14;
+  }
+  
+  .severity-medium {
+    background-color: #ffc107;
+  }
+  
+  .severity-low {
+    background-color: #28a745;
+  }
+  
+  .severity-info {
+    background-color: #17a2b8;
+  }
+  
+  .status-indicator {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .status-new {
+    background-color: #0d6efd;
+  }
+  
+  .status-in-progress {
+    background-color: #ffc107;
+  }
+  
+  .status-closed {
+    background-color: #6c757d;
+  }
+  
+  .status-resolved {
+    background-color: #28a745;
+  }
+  
+  .table-action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .alert-source-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+  }
+  
+  .source-siem {
+    background-color: #007bff;
+  }
+  
+  .source-edr {
+    background-color: #dc3545;
+  }
+  
+  .source-manual {
+    background-color: #6c757d;
+  }
+  
+  .source-firewall {
+    background-color: #fd7e14;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'soc:dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Security Alerts</li>
+    </ol>
+  </nav>
+  
+  <div class="alert-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="mb-0">Security Alerts</h1>
+      <div>
+        <a href="{% url 'soc:alert_create' %}" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Create Alert
+        </a>
+        <button class="btn btn-outline-secondary ms-2" id="toggleFiltersBtn">
+          <i class="fas fa-filter me-2"></i>Filters
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filter section -->
+  <div class="filter-section mb-4" id="filterSection" style="display: none;">
+    <form method="GET" class="row g-3">
+      <div class="col-md-3">
+        <label for="statusFilter" class="form-label">Status</label>
+        <select name="status" id="statusFilter" class="form-select">
+          <option value="">All Statuses</option>
+          {% for key, value in status_choices.items %}
+          <option value="{{ key }}" {% if current_filters.status == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="severityFilter" class="form-label">Severity</label>
+        <select name="severity" id="severityFilter" class="form-select">
+          <option value="">All Severities</option>
+          {% for key, value in severity_choices.items %}
+          <option value="{{ key }}" {% if current_filters.severity == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="falsePositiveFilter" class="form-label">False Positive</label>
+        <select name="false_positive" id="falsePositiveFilter" class="form-select">
+          <option value="">All</option>
+          <option value="true" {% if current_filters.false_positive == 'true' %}selected{% endif %}>Yes</option>
+          <option value="false" {% if current_filters.false_positive == 'false' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="searchFilter" class="form-label">Search</label>
+        <div class="input-group">
+          <input type="text" name="search" id="searchFilter" class="form-control" placeholder="Search alerts..." value="{{ current_filters.search }}">
+          <button class="btn btn-outline-secondary" type="submit">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="col-12 d-flex justify-content-end">
+        <a href="{% url 'soc:alert_list' %}" class="btn btn-outline-secondary me-2">Clear Filters</a>
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Alert statistics -->
+  <div class="alert-stats">
+    <div class="stat-card">
+      <div class="stat-value text-danger">{{ alert_stats.critical|default:"0" }}</div>
+      <div class="stat-label">Critical</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-warning">{{ alert_stats.high|default:"0" }}</div>
+      <div class="stat-label">High</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-info">{{ alert_stats.medium|default:"0" }}</div>
+      <div class="stat-label">Medium</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-success">{{ alert_stats.low|default:"0" }}</div>
+      <div class="stat-label">Low</div>
+    </div>
+  </div>
+  
+  <!-- Alerts table -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover alerts-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Alert</th>
+              <th>Source</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alert in alerts %}
+            <tr>
+              <td>#{{ alert.id }}</td>
+              <td>
+                <a href="{% url 'soc:alert_detail' pk=alert.pk %}" class="fw-bold text-decoration-none">
+                  {{ alert.title }}
+                </a>
+                {% if alert.false_positive %}
+                <span class="badge bg-secondary ms-2">False Positive</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="alert-source-icon source-{{ alert.source|default:'manual'|lower }} me-2">
+                    {% if alert.source == 'SIEM' %}
+                    <i class="fas fa-chart-line"></i>
+                    {% elif alert.source == 'EDR' %}
+                    <i class="fas fa-shield-alt"></i>
+                    {% elif alert.source == 'Firewall' %}
+                    <i class="fas fa-fire"></i>
+                    {% else %}
+                    <i class="fas fa-user"></i>
+                    {% endif %}
+                  </div>
+                  {{ alert.source|default:"Manual" }}
+                </div>
+              </td>
+              <td>
+                <span class="severity-badge severity-{{ alert.severity }}"></span>
+                {{ alert.get_severity_display }}
+              </td>
+              <td>
+                <span class="badge bg-{{ alert.status }}">
+                  {{ alert.get_status_display }}
+                </span>
+              </td>
+              <td>
+                {% if alert.assigned_to %}
+                {{ alert.assigned_to.user.get_full_name|default:alert.assigned_to.user.username }}
+                {% else %}
+                <span class="text-muted">Unassigned</span>
+                {% endif %}
+              </td>
+              <td>{{ alert.created_at|date:"M d, Y" }}</td>
+              <td>
+                <div class="btn-group">
+                  <a href="{% url 'soc:alert_detail' pk=alert.pk %}" class="btn btn-primary btn-sm table-action-btn">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'soc:alert_update' pk=alert.pk %}" class="btn btn-info btn-sm table-action-btn">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {% if not alert.related_incident %}
+                  <a href="{% url 'soc:alert_escalate' pk=alert.pk %}" class="btn btn-danger btn-sm table-action-btn">
+                    <i class="fas fa-arrow-up"></i>
+                  </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <p class="text-muted mb-0">No alerts found matching your criteria.</p>
+                <a href="{% url 'soc:alert_create' %}" class="btn btn-primary btn-sm mt-2">Create an Alert</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      {% if alerts.has_other_pages %}
+      <nav aria-label="Alert pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if alerts.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ alerts.previous_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.severity %}&severity={{ current_filters.severity }}{% endif %}{% if current_filters.false_positive %}&false_positive={{ current_filters.false_positive }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&laquo;</span>
+          </li>
+          {% endif %}
+          
+          {% for i in alerts.paginator.page_range %}
+            {% if alerts.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.severity %}&severity={{ current_filters.severity }}{% endif %}{% if current_filters.false_positive %}&false_positive={{ current_filters.false_positive }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">{{ i }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if alerts.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ alerts.next_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.severity %}&severity={{ current_filters.severity }}{% endif %}{% if current_filters.false_positive %}&false_positive={{ current_filters.false_positive }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&raquo;</span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle filter section
+    const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+    const filterSection = document.getElementById('filterSection');
+    
+    toggleFiltersBtn.addEventListener('click', function() {
+      if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+      } else {
+        filterSection.style.display = 'none';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-filter me-2"></i>Filters';
+      }
+    });
+    
+    // Show filters if any are active
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('status') || urlParams.has('severity') || urlParams.has('false_positive') || urlParams.has('search')) {
+      filterSection.style.display = 'block';
+      toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Security Requests{% endblock %}
+
+{% block extra_css %}
+<style>
+  .request-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .request-stats {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+  }
+  
+  .stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex: 1;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+  
+  .priority-badge {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .security-requests-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  
+  .security-requests-table td {
+    vertical-align: middle;
+  }
+  
+  .priority-critical {
+    background-color: #dc3545;
+  }
+  
+  .priority-high {
+    background-color: #fd7e14;
+  }
+  
+  .priority-medium {
+    background-color: #ffc107;
+  }
+  
+  .priority-low {
+    background-color: #28a745;
+  }
+  
+  .status-indicator {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .status-new {
+    background-color: #0d6efd;
+  }
+  
+  .status-in-progress {
+    background-color: #ffc107;
+  }
+  
+  .status-resolved {
+    background-color: #28a745;
+  }
+  
+  .status-closed {
+    background-color: #6c757d;
+  }
+
+  .table-action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'soc:dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Security Requests</li>
+    </ol>
+  </nav>
+  
+  <div class="request-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="mb-0">Security Requests</h1>
+      <div>
+        <button class="btn btn-outline-secondary" id="toggleFiltersBtn">
+          <i class="fas fa-filter me-2"></i>Filters
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Filter section -->
+  <div class="filter-section mb-4" id="filterSection" style="display: none;">
+    <form method="GET" class="row g-3">
+      <div class="col-md-3">
+        <label for="statusFilter" class="form-label">Status</label>
+        <select name="status" id="statusFilter" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="new" {% if current_filters.status == 'new' %}selected{% endif %}>New</option>
+          <option value="in_progress" {% if current_filters.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+          <option value="pending_info" {% if current_filters.status == 'pending_info' %}selected{% endif %}>Pending Info</option>
+          <option value="resolved" {% if current_filters.status == 'resolved' %}selected{% endif %}>Resolved</option>
+          <option value="closed" {% if current_filters.status == 'closed' %}selected{% endif %}>Closed</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="priorityFilter" class="form-label">Priority</label>
+        <select name="priority" id="priorityFilter" class="form-select">
+          <option value="">All Priorities</option>
+          <option value="critical" {% if current_filters.priority == 'critical' %}selected{% endif %}>Critical</option>
+          <option value="high" {% if current_filters.priority == 'high' %}selected{% endif %}>High</option>
+          <option value="medium" {% if current_filters.priority == 'medium' %}selected{% endif %}>Medium</option>
+          <option value="low" {% if current_filters.priority == 'low' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="categoryFilter" class="form-label">Category</label>
+        <select name="category" id="categoryFilter" class="form-select">
+          <option value="">All Categories</option>
+          <option value="access" {% if current_filters.category == 'access' %}selected{% endif %}>Access Request</option>
+          <option value="incident" {% if current_filters.category == 'incident' %}selected{% endif %}>Security Incident</option>
+          <option value="vulnerability" {% if current_filters.category == 'vulnerability' %}selected{% endif %}>Vulnerability Report</option>
+          <option value="question" {% if current_filters.category == 'question' %}selected{% endif %}>General Question</option>
+          <option value="other" {% if current_filters.category == 'other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3">
+        <label for="searchFilter" class="form-label">Search</label>
+        <input type="text" name="search" id="searchFilter" class="form-control" placeholder="Search requests..." value="{{ current_filters.search }}">
+      </div>
+      
+      <div class="col-12 d-flex justify-content-end">
+        <a href="{% url 'soc:security_request_list' %}" class="btn btn-outline-secondary me-2">Clear Filters</a>
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Request statistics -->
+  <div class="request-stats">
+    <div class="stat-card">
+      <div class="stat-value text-primary">{{ request_stats.total|default:"0" }}</div>
+      <div class="stat-label">Total Requests</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-warning">{{ request_stats.open|default:"0" }}</div>
+      <div class="stat-label">Open Requests</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-info">{{ request_stats.in_progress|default:"0" }}</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value text-success">{{ request_stats.resolved|default:"0" }}</div>
+      <div class="stat-label">Resolved</div>
+    </div>
+  </div>
+  
+  <!-- Request table -->
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover security-requests-table">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Title</th>
+              <th>Requester</th>
+              <th>Category</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for request in security_requests %}
+            <tr>
+              <td>#{{ request.id }}</td>
+              <td>
+                <a href="{% url 'soc:security_request_detail' request_id=request.id %}" class="text-decoration-none">
+                  {{ request.title }}
+                </a>
+              </td>
+              <td>{{ request.requester.get_full_name|default:request.requester.username }}</td>
+              <td>
+                <span class="badge bg-secondary">{{ request.get_category_display|default:"General" }}</span>
+              </td>
+              <td>
+                <span class="priority-badge priority-{{ request.priority }}"></span>
+                {{ request.get_priority_display }}
+              </td>
+              <td>
+                <span class="status-indicator status-{{ request.status }}"></span>
+                {{ request.get_status_display }}
+              </td>
+              <td>{{ request.created_at|date:"M d, Y" }}</td>
+              <td>
+                <a href="{% url 'soc:security_request_detail' request_id=request.id %}" class="btn btn-primary btn-sm table-action-btn">
+                  <i class="fas fa-eye"></i>
+                </a>
+                {% if request.status != 'resolved' and request.status != 'closed' %}
+                <a href="{% url 'soc:mark_security_request_resolved' request_id=request.id %}" class="btn btn-success btn-sm table-action-btn">
+                  <i class="fas fa-check"></i>
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <p class="text-muted mb-0">No security requests found.</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      {% if security_requests.has_other_pages %}
+      <nav aria-label="Security request pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if security_requests.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ security_requests.previous_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.category %}&category={{ current_filters.category }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&laquo;</span>
+          </li>
+          {% endif %}
+          
+          {% for i in security_requests.paginator.page_range %}
+            {% if security_requests.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.category %}&category={{ current_filters.category }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">{{ i }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if security_requests.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ security_requests.next_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.priority %}&priority={{ current_filters.priority }}{% endif %}{% if current_filters.category %}&category={{ current_filters.category }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link" aria-hidden="true">&raquo;</span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle filter section
+    const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+    const filterSection = document.getElementById('filterSection');
+    
+    toggleFiltersBtn.addEventListener('click', function() {
+      if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+      } else {
+        filterSection.style.display = 'none';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-filter me-2"></i>Filters';
+      }
+    });
+    
+    // Show filters if any are active
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('status') || urlParams.has('priority') || urlParams.has('category') || urlParams.has('search')) {
+      filterSection.style.display = 'block';
+      toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+    }
+  });
+</script>
+{% endblock %}

@@ -25,6 +25,7 @@
 8. [Development and Deployment](#development-and-deployment)
 9. [Future Enhancements](#future-enhancements)
 10. [Troubleshooting](#troubleshooting)
+11. [Codebase Structure and Templates](#codebase-structure-and-templates)
 
 ## Introduction
 
@@ -366,3 +367,144 @@ Planned enhancements for future releases:
 - Consider CDN for static assets
 
 For additional support, consult the developer community forums or submit issues through the project's issue tracking system.
+
+## Codebase Structure and Templates
+
+### Directory Organization
+
+The Sage codebase follows a modular structure organized around Django apps:
+
+```
+/home/lee/Documents/Sage/
+├── docs/                     # Documentation files
+├── requirements.txt          # Python dependencies
+├── src/
+│   └── Cybersec/            # Main Django project
+│       ├── Awareness/        # Security awareness assessment module
+│       ├── Articles/         # Security articles management
+│       ├── Courses/          # Course management and learning
+│       ├── Cybersec/         # Project settings and core files
+│       ├── NonSoc/           # Non-SOC user interfaces
+│       ├── Soc/              # Security Operations Center tools
+│       └── user/             # User management and authentication
+```
+
+### Key Templates
+
+The system includes a variety of template files for different functionalities:
+
+#### SOC Module Templates
+
+1. **Dashboard**
+   - `soc/dashboard.html`: Main SOC user dashboard with metrics and quick actions
+   - `soc/metrics_dashboard.html`: Detailed security metrics visualization
+
+2. **Incident Management**
+   - `soc/incident_list.html`: List view of security incidents
+   - `soc/incident_detail.html`: Detailed view of security incident
+   - `soc/incident_form.html`: Creation/editing form for incidents
+   - `soc/create_incident.html`: Simplified incident creation form
+
+3. **Alert Management**
+   - `soc/alert_list.html`: List view of security alerts
+   - `soc/alert_detail.html`: Detailed view of security alert
+   - `soc/alert_form.html`: Creation/editing form for alerts
+
+4. **Task Management**
+   - `soc/task_list.html`: List view of SOC tasks
+   - `soc/task_detail.html`: Detailed view of task
+   - `soc/task_form.html`: Creation/editing form for tasks
+
+5. **Report Management**
+   - `soc/report_list.html`: List view of security reports
+   - `soc/report_detail.html`: Detailed view of security report
+   - `soc/report_form.html`: Creation/editing form for reports
+
+6. **Playbook Management**
+   - `soc/playbook_list.html`: List view of incident response playbooks
+   - `soc/playbook_detail.html`: Detailed view of playbook
+   - `soc/playbook_form.html`: Creation/editing form for playbooks
+
+7. **Security Request Management**
+   - `soc/security_request_list.html`: List view of security requests
+   - `soc/security_request_detail.html`: Detailed view of security request
+
+#### Non-SOC Module Templates
+
+1. **Dashboard**
+   - `NonSoc/nonsoc_dashboard.html`: Main dashboard for non-technical users
+
+2. **Security Awareness**
+   - `NonSoc/user_progress.html`: User's learning progress and achievements
+   - `NonSoc/notifications.html`: User notification center
+
+3. **Security Requests**
+   - `NonSoc/create_security_request.html`: Form to submit security questions
+   - `NonSoc/security_request_detail.html`: View security request details
+
+4. **Articles**
+   - `NonSoc/article_list.html`: List of security awareness articles
+   - `NonSoc/article_detail.html`: Detailed view of article
+
+#### Awareness Module Templates
+
+1. **Modules**
+   - `Awareness/module_list.html`: List of awareness assessment modules
+   - `Awareness/module_detail.html`: Module overview and management
+   - `Awareness/module_detail_analytics.html`: Performance analytics
+
+2. **Assessments**
+   - `Awareness/complete_module.html`: Interface for taking assessments
+   - `Awareness/manage_questions.html`: Question management interface
+
+3. **Question Management**
+   - `Awareness/add_question.html`: Form for adding assessment questions
+
+#### Courses Module Templates
+
+1. **Course Management**
+   - `courses/course_list.html`: List of available courses
+   - `courses/course_detail.html`: Course overview and management
+
+2. **Learning Interface**
+   - `courses/course_learn.html`: Main learning interface
+   - `courses/chapter_view.html`: Chapter content and quiz
+
+3. **Course Creation**
+   - `courses/create_course_start.html`: Initial course creation
+   - `courses/create_course_details.html`: Course details form
+   - `courses/create_course_modules.html`: Module creation interface
+
+### Template Design Patterns
+
+The Sage platform implements several consistent design patterns across templates:
+
+1. **Base Templates**
+   - `base.html`: Core template with common structure
+   - `base_nonsoc.html`: Base template for non-SOC interface
+
+2. **Navigation Elements**
+   - Breadcrumbs for hierarchical navigation
+   - Context-aware sidebars
+   - Responsive navigation bars
+
+3. **Card-Based Components**
+   - Consistent use of cards for content organization
+   - Standardized headers, footers, and actions
+
+4. **Data Visualization**
+   - Progress indicators
+   - Charts and graphs
+   - Severity and status indicators
+
+5. **Interactive Elements**
+   - Form validation and error handling
+   - AJAX-powered dynamic content
+   - Filtering and sorting interfaces
+
+6. **Responsive Design**
+   - Mobile-friendly layouts
+   - Adaptive content presentation
+   - Consistent behavior across device sizes
+
+This structured approach to templates ensures a cohesive user experience while maintaining clear separation between different functional areas of the platform.

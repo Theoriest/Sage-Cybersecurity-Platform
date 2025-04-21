@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Incident Response Playbooks{% endblock %}
+
+{% block extra_css %}
+<style>
+  .playbooks-header {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+  }
+  
+  .filter-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .playbook-card {
+    height: 100%;
+    transition: transform 0.2s;
+  }
+  
+  .playbook-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.75rem;
+  }
+  
+  .card-footer {
+    background-color: transparent;
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  .meta-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+  
+  .category-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #6c757d;
+  }
+  
+  /* Category colors */
+  .category-incident {
+    color: #dc3545;
+  }
+  
+  .category-threat {
+    color: #fd7e14;
+  }
+  
+  .category-vulnerability {
+    color: #ffc107;
+  }
+  
+  .category-recovery {
+    color: #28a745;
+  }
+  
+  .category-general {
+    color: #17a2b8;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'soc:dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Incident Response Playbooks</li>
+    </ol>
+  </nav>
+  
+  <div class="playbooks-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="mb-0">Incident Response Playbooks</h1>
+      <div>
+        <a href="{% url 'soc:playbook_create' %}" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Create Playbook
+        </a>
+        <button class="btn btn-outline-secondary ms-2" id="toggleFiltersBtn">
+          <i class="fas fa-filter me-2"></i>Filters
+        </button>
+      </div>
+    </div>
+    <p class="text-muted mt-2 mb-0">
+      Standardized procedures for responding to security incidents and threats
+    </p>
+  </div>
+  
+  <!-- Filter section -->
+  <div class="filter-section mb-4" id="filterSection" style="display: none;">
+    <form method="GET" class="row g-3">
+      <div class="col-md-6">
+        <label for="categoryFilter" class="form-label">Category</label>
+        <select name="category" id="categoryFilter" class="form-select">
+          <option value="">All Categories</option>
+          {% for key, value in category_choices.items %}
+          <option value="{{ key }}" {% if current_filters.category == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-md-6 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+        <a href="{% url 'soc:playbook_list' %}" class="btn btn-outline-secondary">Clear Filters</a>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Playbooks grid -->
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+    {% for playbook in playbooks %}
+    <div class="col">
+      <div class="card playbook-card">
+        <div class="card-body">
+          <span class="badge bg-secondary category-badge">{{ playbook.get_category_display }}</span>
+          
+          <div class="text-center mb-3">
+            {% if playbook.category == 'incident' %}
+              <i class="fas fa-exclamation-triangle category-icon category-incident"></i>
+            {% elif playbook.category == 'threat' %}
+              <i class="fas fa-shield-alt category-icon category-threat"></i>
+            {% elif playbook.category == 'vulnerability' %}
+              <i class="fas fa-bug category-icon category-vulnerability"></i>
+            {% elif playbook.category == 'recovery' %}
+              <i class="fas fa-sync category-icon category-recovery"></i>
+            {% else %}
+              <i class="fas fa-book category-icon category-general"></i>
+            {% endif %}
+          </div>
+          
+          <h5 class="card-title">{{ playbook.title }}</h5>
+          <p class="card-text">{{ playbook.description|truncatechars:120 }}</p>
+        </div>
+        <div class="card-footer">
+          <div class="meta-info mb-3">
+            <span>
+              <i class="fas fa-user-shield me-1"></i>
+              {{ playbook.created_by.get_full_name|default:playbook.created_by.username|truncatechars:15 }}
+            </span>
+            <span>
+              <i class="fas fa-calendar-alt me-1"></i>
+              {{ playbook.created_at|date:"M d, Y" }}
+            </span>
+          </div>
+          <a href="{% url 'soc:playbook_detail' pk=playbook.pk %}" class="btn btn-outline-primary w-100">View Playbook</a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info text-center">
+        <p class="mb-3">No playbooks found matching your criteria.</p>
+        <a href="{% url 'soc:playbook_create' %}" class="btn btn-primary">Create Your First Playbook</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  
+  <!-- Pagination -->
+  {% if playbooks.has_other_pages %}
+  <nav aria-label="Playbook pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if playbooks.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ playbooks.previous_page_number }}{% if current_filters.category %}&category={{ current_filters.category }}{% endif %}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link" aria-hidden="true">&laquo;</span>
+      </li>
+      {% endif %}
+      
+      {% for i in playbooks.paginator.page_range %}
+        {% if playbooks.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% else %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ i }}{% if current_filters.category %}&category={{ current_filters.category }}{% endif %}">{{ i }}</a>
+        </li>
+        {% endif %}
+      {% endfor %}
+      
+      {% if playbooks.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ playbooks.next_page_number }}{% if current_filters.category %}&category={{ current_filters.category }}{% endif %}" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link" aria-hidden="true">&raquo;</span>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle filter section
+    const toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+    const filterSection = document.getElementById('filterSection');
+    
+    toggleFiltersBtn.addEventListener('click', function() {
+      if (filterSection.style.display === 'none') {
+        filterSection.style.display = 'block';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+      } else {
+        filterSection.style.display = 'none';
+        toggleFiltersBtn.innerHTML = '<i class="fas fa-filter me-2"></i>Filters';
+      }
+    });
+    
+    // Show filters if any are active
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('category')) {
+      filterSection.style.display = 'block';
+      toggleFiltersBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hide Filters';
+    }
+  });
+</script>
+{% endblock %}
